@@ -19,6 +19,8 @@ ENDPOINT_RESP = 'Available endpoints'
 HELLO_EP = '/hello'
 HELLO_RESP = 'hello'
 MESSAGE = 'Message'
+JOURNAL_EP = '/journal'
+JOURNAL_RESP = 'journal'
 
 
 @api.route(HELLO_EP)
@@ -46,3 +48,14 @@ class Endpoints(Resource):
         """
         endpoints = sorted(rule.rule for rule in api.app.url_map.iter_rules())
         return {"Available endpoints": endpoints}
+
+@api.route(JOURNAL_EP)
+class Journal(Resource):
+    """
+    This class will serve as a simple journal endpoint.
+    """
+    def get(self):
+        """
+        The `get()` method will return a simple message.
+        """
+        return {JOURNAL_RESP: 'RJRTM Journal'}
