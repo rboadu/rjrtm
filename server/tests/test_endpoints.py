@@ -21,6 +21,7 @@ def test_hello():
     resp_json = resp.get_json()
     assert ep.HELLO_RESP in resp_json
 
+
 def test_journal():
     resp = TEST_CLIENT.get(ep.JOURNAL_EP)
     resp_json = resp.get_json()
