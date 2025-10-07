@@ -16,7 +16,7 @@ github: FORCE
 
 all_tests: FORCE
 	PYTHONPATH=$(shell pwd) pytest -vv --cov=server server/tests
-	# PYTHONPATH=$(shell pwd) pytest -vv --cov=data data/tests
+	PYTHONPATH=$(shell pwd) pytest -vv --cov=data data/tests
 	PYTHONPATH=$(shell pwd) pytest -vv --cov=security security/tests
 
 dev_env: FORCE
