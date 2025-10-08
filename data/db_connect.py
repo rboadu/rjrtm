@@ -65,6 +65,18 @@ def read_one(collection, filt, db=SE_DB):
         convert_mongo_id(doc)
         return doc
 
+def read_many(collection, filt, db=SE_DB, no_id=True) -> list:
+    """
+    Find multiple documents with a filter and return as a list.
+    """
+    res = []
+    for doc in client[db][collection].find(filt):
+        if not no_id:
+            convert_mongo_id(doc)
+        else:
+            del doc[MONGO_ID]
+        res.append(doc)
+    return res
 
 def delete(collection: str, filt: dict, db=SE_DB):
     """
