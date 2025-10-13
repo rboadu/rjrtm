@@ -15,9 +15,9 @@ github: FORCE
 	git push origin master
 
 all_tests: FORCE
-	cd $(API_DIR); make tests
-	#cd $(DB_DIR); make tests
-	cd $(SEC_DIR); make tests
+	PYTHONPATH=$(shell pwd) pytest -vv --cov=server server/tests
+	PYTHONPATH=$(shell pwd) pytest -vv --cov=data data/tests
+	PYTHONPATH=$(shell pwd) pytest -vv --cov=security security/tests
 
 dev_env: FORCE
 	pip3 install -r $(REQ_DIR)/requirements-dev.txt
