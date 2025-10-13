@@ -7,6 +7,7 @@ The endpoint called `endpoints` will return all available endpoints.
 from flask import Flask  # , request
 from flask_restx import Resource, Api  # , fields  # Namespace
 from flask_cors import CORS
+from flask_restx import fields
 
 # import werkzeug.exceptions as wz
 
@@ -60,3 +61,17 @@ class Journal(Resource):
         The `get()` method will return a simple message.
         """
         return {JOURNAL_RESP: 'RJRTM Journal'}
+    
+journal_model = api.model('JournalEntry', {
+    'entry': fields.String(required=True, description='Journal entry text')
+})
+
+@api.route('/journal/add')
+class JournalAdd(Resource):
+    @api.expect(journal_model)
+    def post(self):
+        data = api.payload
+        entry = data.get('entry')
+        if not entry:
+            return {'error': 'Entry is required'}, 400
+        return {'message': 'Entry added', 'entry': entry}, 201
