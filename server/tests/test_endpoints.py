@@ -15,6 +15,9 @@ import server.endpoints as ep
 
 TEST_CLIENT = ep.app.test_client()
 
+@pytest.fixture
+def client():
+    return ep.app.test_client()
 
 def test_hello():
     resp = TEST_CLIENT.get(ep.HELLO_EP)
