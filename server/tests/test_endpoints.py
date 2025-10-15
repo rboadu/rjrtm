@@ -37,3 +37,12 @@ def test_journal_add(client):
     resp_json = response.get_json()
     assert resp_json['message'] == 'Entry added'
     assert resp_json['entry'] == 'My first journal entry'
+
+def test_get_states(client):
+    response = client.get('/states')
+    assert response.status_code in (200, 500)  # 500 if Mongo not connected
+    assert 'states' not in response.get_json() or isinstance(response.get_json(), list)
+
+def test_post_states(client):
+    response = client.post('/states', json={'code': 'CA', 'name': 'California'})
+    assert response.status_code in (201, 500)

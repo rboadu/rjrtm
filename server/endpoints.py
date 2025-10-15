@@ -8,6 +8,7 @@ from flask import Flask  # , request
 from flask_restx import Resource, Api  # , fields  # Namespace
 from flask_cors import CORS
 from flask_restx import fields
+import data.states as ds
 
 # import werkzeug.exceptions as wz
 
@@ -22,6 +23,11 @@ HELLO_RESP = 'hello'
 MESSAGE = 'Message'
 JOURNAL_EP = '/journal'
 JOURNAL_RESP = 'journal'
+
+state_model = api.model('State', {
+    'code': fields.String(required=True, description='State code, e.g. NY'),
+    'name': fields.String(required=True, description='State name, e.g. New York')
+})
 
 
 @api.route(HELLO_EP)
@@ -75,3 +81,19 @@ class JournalAdd(Resource):
         if not entry:
             return {'error': 'Entry is required'}, 400
         return {'message': 'Entry added', 'entry': entry}, 201
+
+
+@api.route('/states')
+class States(Resource):
+    @api.marshal_list_with(state_model)
+    def get(self):
+        """Return all states from the database."""
+        states = ds.read_all_states()
+        return states
+
+    @api.expect(state_model)
+    def post(self):
+        """Add a new state."""
+        data = api.payload
+        ds.create_state(data)
+        return {'message': 'State added successfully', 'state': data}, 201
