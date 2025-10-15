@@ -1,6 +1,5 @@
 MONGO_URI = "mongodb://localhost:27017"
 DB_NAME = "geographic_db"
-# --- 👇 non-invasive helpers for DB config (safe to import) -------------------
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
@@ -59,4 +58,3 @@ def compose_url(s: DBSettings) -> Optional[str]:
         port = f":{s.port}" if s.port else ""
         return f"mongodb://{auth}{s.host}{port}/{s.name}"
     return None
-# --- 👆 helpers end -----------------------------------------------------------
