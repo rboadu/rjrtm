@@ -9,6 +9,7 @@ logger.info("Server starting…")
 
 app = Flask(__name__)
 
+#remove later
 # Root endpoint for health check
 @app.route('/')
 def root():
