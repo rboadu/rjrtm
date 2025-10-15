@@ -107,3 +107,5 @@ def fetch_all_as_dict(key, collection, db=SE_DB):
         del doc[MONGO_ID]
         ret[doc[key]] = doc
     return ret
+
+# Ensure we connect when this file is loaded.
