@@ -9,7 +9,7 @@ logger.info("Server starting…")
 
 app = Flask(__name__)
 
-
+# Root endpoint for health check
 @app.route('/')
 def root():
     logger.info("Successful request to '/'")
