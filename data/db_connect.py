@@ -120,4 +120,54 @@ def fetch_all_as_dict(key, collection, db=SE_DB):
         ret[doc[key]] = doc
     return ret
 
+from __future__ import annotations
+from typing import Optional
+import logging
+from urllib.parse import urlparse, urlunparse
 
+"""
+Helper utilities for connection handling. These are additive and do not alter
+existing behavior or import-time side effects.
+"""
+
+def get_logger(name: Optional[str] = None) -> logging.Logger:
+    """Return a module-scoped logger (no handlers/config set here)."""
+    return logging.getLogger(name or __name__)
+
+_SUPPORTED = {"mongodb", "postgres", "postgresql", "mysql", "sqlite"}
+
+def is_supported_scheme(url: Optional[str]) -> bool:
+    """True if URL has a recognized scheme (mongodb/postgres/mysql/sqlite)."""
+    if not url:
+        return False
+    scheme = urlparse(url).scheme.lower()
+    return scheme in _SUPPORTED
+
+def normalize_url(url: str) -> str:
+    """
+    Normalize trivial variants (e.g., 'postgres' -> 'postgresql') without
+    changing credentials/host/db. No network calls.
+    """
+    p = urlparse(url)
+    scheme = "postgresql" if p.scheme.lower() == "postgres" else p.scheme
+    return urlunparse((scheme, p.netloc, p.path, p.params, p.query, p.fragment))
+
+def safe_preview(url: Optional[str]) -> str:
+    """
+    Return a redacted preview of a DB URL for logging: user shown, password hidden.
+    Examples:
+      mongodb://user:****@localhost:27017/mydb
+      postgresql://user@db.example.com:5432/app
+    """
+    if not url:
+        return "(no url)"
+    p = urlparse(url)
+    # redact password if present
+    if p.username:
+        cred = p.username + (":****" if p.password else "")
+        netloc = f"{cred}@{p.hostname or ''}"
+        if p.port:
+            netloc += f":{p.port}"
+    else:
+        netloc = p.netloc
+    return urlunparse((p.scheme, netloc, p.path, p.params, p.query, p.fragment))
