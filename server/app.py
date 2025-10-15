@@ -1,4 +1,5 @@
 from flask import Flask
+from routes.countries import countries_bp
 import logging
 
 
@@ -8,6 +9,7 @@ logger = logging.getLogger(__name__)
 logger.info("Server starting…")
 
 app = Flask(__name__)
+app.register_blueprint(countries_bp)
 
 # Root endpoint for health check
 @app.route('/')
