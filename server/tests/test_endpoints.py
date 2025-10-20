@@ -21,6 +21,10 @@ def client():
     """Provides a test client for the Flask app."""
     return ep.app.test_client()
 
+@pytest.mark.skip(reason="Demo of skip feature for assignment")
+def skipped_test_example():
+    assert True 
+
 def test_hello():
     """Test the /hello endpoint returns the expected greeting."""
     resp = TEST_CLIENT.get(ep.HELLO_EP)
