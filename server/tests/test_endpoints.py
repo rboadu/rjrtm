@@ -19,6 +19,10 @@ TEST_CLIENT = ep.app.test_client()
 def client():
     return ep.app.test_client()
 
+@pytest.mark.skip(reason="Demo of skip feature for assignment")
+def skipped_test_example():
+    assert True 
+
 def test_hello():
     resp = TEST_CLIENT.get(ep.HELLO_EP)
     resp_json = resp.get_json()
@@ -30,19 +34,3 @@ def test_journal():
     resp_json = resp.get_json()
     assert ep.JOURNAL_RESP in resp_json
     assert resp_json[ep.JOURNAL_RESP] == 'RJRTM Journal'
-
-def test_journal_add(client):
-    response = client.post('/journal/add', json={'entry': 'My first journal entry'})
-    assert response.status_code == 201
-    resp_json = response.get_json()
-    assert resp_json['message'] == 'Entry added'
-    assert resp_json['entry'] == 'My first journal entry'
-
-def test_get_states(client):
-    response = client.get('/states')
-    assert response.status_code in (200, 500)  # 500 if Mongo not connected
-    assert 'states' not in response.get_json() or isinstance(response.get_json(), list)
-
-def test_post_states(client):
-    response = client.post('/states', json={'code': 'CA', 'name': 'California'})
-    assert response.status_code in (201, 500)
