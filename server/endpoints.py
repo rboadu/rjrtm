@@ -5,6 +5,7 @@ import data.states as ds
 from server.routes.countries import countries_bp
 
 # import werkzeug.exceptions as wz
+from server.routes.countries import countries_bp
 import data.cities as dc
 
 app = Flask(__name__)
