@@ -101,3 +101,16 @@ class States(Resource):
         data = api.payload
         ds.create_state(data)
         return {'message': 'State added successfully', 'state': data}, 201
+    
+@app.route('/cities', methods=['GET'])
+def get_cities():
+    """Get all cities."""
+    return jsonify(dc.get_all_cities())
+
+@app.route('/cities/<name>', methods=['GET'])
+def get_city(name):
+    """Get city by name."""
+    city = dc.get_city_by_name(name)
+    if city:
+        return jsonify(city)
+    return jsonify({"error": "City not found"}), 404
