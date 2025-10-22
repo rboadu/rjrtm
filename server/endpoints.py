@@ -1,16 +1,8 @@
-"""
-This is the file containing all of the endpoints for our flask app.
-The endpoint called `endpoints` will return all available endpoints.
-"""
-# from http import HTTPStatus
-
-from flask import Flask  # , request
-from flask_restx import Resource, Api  # , fields  # Namespace
+from flask import Flask, jsonify, request
+from flask_restx import Resource, Api, fields
 from flask_cors import CORS
-from flask_restx import fields
 import data.states as ds
-
-# import werkzeug.exceptions as wz
+import data.cities as dc
 
 app = Flask(__name__)
 CORS(app)
@@ -24,53 +16,46 @@ MESSAGE = 'Message'
 JOURNAL_EP = '/journal'
 JOURNAL_RESP = 'journal'
 
+# Models
+
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
     'name': fields.String(required=True, description='State name, e.g. New York')
 })
 
+city_model = api.model('City', {
+    'name': fields.String(required=True, description='City name'),
+    'country': fields.String(required=True, description='Country where the city is located'),
+    'population': fields.Integer(description='Population of the city')
+})
+
+journal_model = api.model('JournalEntry', {
+    'entry': fields.String(required=True, description='Journal entry text')
+})
+
+# Endpoints
 
 @api.route(HELLO_EP)
 class HelloWorld(Resource):
-    """
-    The purpose of the HelloWorld class is to have a simple test to see if the
-    app is working at all.
-    """
+    """Simple health check endpoint."""
     def get(self):
-        """
-        A trivial endpoint to see if the server is running.
-        """
         return {HELLO_RESP: 'world'}
 
 
 @api.route(ENDPOINT_EP)
 class Endpoints(Resource):
-    """
-    This class will serve as live, fetchable documentation of what endpoints
-    are available in the system.
-    """
+    """Return all available endpoints."""
     def get(self):
-        """
-        The `get()` method will return a sorted list of available endpoints.
-        """
         endpoints = sorted(rule.rule for rule in api.app.url_map.iter_rules())
         return {"Available endpoints": endpoints}
 
 
 @api.route(JOURNAL_EP)
 class Journal(Resource):
-    """
-    This class will serve as a simple journal endpoint.
-    """
+    """A simple journal endpoint."""
     def get(self):
-        """
-        The `get()` method will return a simple message.
-        """
         return {JOURNAL_RESP: 'RJRTM Journal'}
-    
-journal_model = api.model('JournalEntry', {
-    'entry': fields.String(required=True, description='Journal entry text')
-})
+
 
 @api.route('/journal/add')
 class JournalAdd(Resource):
@@ -97,16 +82,44 @@ class States(Resource):
         data = api.payload
         ds.create_state(data)
         return {'message': 'State added successfully', 'state': data}, 201
-    
-@app.route('/cities', methods=['GET'])
-def get_cities():
-    """Get all cities."""
-    return jsonify(dc.get_all_cities())
 
-@app.route('/cities/<name>', methods=['GET'])
-def get_city(name):
-    """Get city by name."""
-    city = dc.get_city_by_name(name)
-    if city:
-        return jsonify(city)
-    return jsonify({"error": "City not found"}), 404
+@api.route('/cities')
+class Cities(Resource):
+    @api.marshal_list_with(city_model)
+    def get(self):
+        """Return all cities."""
+        cities = dc.get_all_cities()
+        return cities
+
+    @api.expect(city_model)
+    def post(self):
+        """Add a new city."""
+        data = api.payload
+        if not data or "name" not in data:
+            return {"error": "City name required"}, 400
+        dc.add_city(data)
+        return {'message': 'City added successfully', 'city': data}, 201
+
+
+@api.route('/cities/<string:name>')
+class CityByName(Resource):
+    def get(self, name):
+        """Return a specific city by name."""
+        city = dc.get_city_by_name(name)
+        if city:
+            return city, 200
+        return {'error': 'City not found'}, 404
+
+    @api.expect(city_model)
+    def put(self, name):
+        """Update a city by name."""
+        updates = api.payload
+        if dc.update_city(name, updates):
+            return {'message': 'City updated'}, 200
+        return {'error': 'City not found'}, 404
+
+    def delete(self, name):
+        """Delete a city by name."""
+        if dc.delete_city(name):
+            return {'message': 'City deleted'}, 200
+        return {'error': 'City not found'}, 404
