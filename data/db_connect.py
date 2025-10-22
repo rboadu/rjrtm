@@ -2,8 +2,11 @@
 All interaction with MongoDB should be through this file!
 We may be required to use a new database at any point.
 """
+from __future__ import annotations
 import os
-
+from typing import Optional
+import logging
+from urllib.parse import urlparse, urlunparse
 import pymongo as pm
 
 LOCAL = "0"
@@ -120,10 +123,7 @@ def fetch_all_as_dict(key, collection, db=SE_DB):
         ret[doc[key]] = doc
     return ret
 
-from __future__ import annotations
-from typing import Optional
-import logging
-from urllib.parse import urlparse, urlunparse
+
 
 """
 Helper utilities for connection handling. These are additive and do not alter

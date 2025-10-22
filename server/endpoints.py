@@ -9,12 +9,16 @@ from flask_restx import Resource, Api  # , fields  # Namespace
 from flask_cors import CORS
 from flask_restx import fields
 import data.states as ds
+from server.routes.countries import countries_bp
 
 # import werkzeug.exceptions as wz
 
 app = Flask(__name__)
 CORS(app)
 api = Api(app)
+
+# register routes
+app.register_blueprint(countries_bp)
 
 ENDPOINT_EP = '/endpoints'
 ENDPOINT_RESP = 'Available endpoints'

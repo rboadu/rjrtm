@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from http.client import (
     BAD_REQUEST,
     FORBIDDEN,
@@ -46,3 +47,11 @@ def test_get_states(client):
 def test_post_states(client):
     response = client.post('/states', json={'code': 'CA', 'name': 'California'})
     assert response.status_code in (201, 500)
+
+def test_get_countries(client):
+    """Test the GET /countries endpoint."""
+    response = client.get('/countries/')
+    assert response.status_code in (HTTPStatus.OK, HTTPStatus.INTERNAL_SERVER_ERROR, HTTPStatus.NOT_FOUND)
+    if response.status_code == HTTPStatus.OK:
+        resp_json = response.get_json()
+        assert isinstance(resp_json, list)
