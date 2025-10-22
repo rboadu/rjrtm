@@ -127,3 +127,85 @@ def test_get_all_cities_with_fake_db(monkeypatch):
     assert len(all_cities) == 2
     names = {c['name'] for c in all_cities}
     assert names == {"Tokyo", "Osaka"}
+
+
+def test_update_city_returns_false_when_not_found(monkeypatch):
+    """Ensure update_city returns False when no document matches."""
+
+    class FakeCollection2:
+        def __init__(self):
+            self._docs = []
+
+        def find(self, *a, **k):
+            return iter(self._docs)
+
+        def find_one(self, filt, *a, **k):
+            return None
+
+        def insert_one(self, doc):
+            self._docs.append(dict(doc))
+            class R:
+                pass
+            return R()
+
+        def update_one(self, filt, update):
+            class R:
+                modified_count = 0
+            return R()
+
+        def delete_one(self, filt):
+            class R:
+                deleted_count = 0
+            return R()
+
+    class FakeDB2:
+        def __init__(self):
+            self.cities = FakeCollection2()
+
+    fake_db2 = FakeDB2()
+    monkeypatch.setattr(dc, 'db', fake_db2)
+
+    # attempt to update a non-existent city
+    success = dc.update_city('Nonexistent', {'population': 123})
+    assert success is False
+
+
+def test_update_city_returns_false_when_not_found(monkeypatch):
+    """Ensure update_city returns False when no document matches."""
+
+    class FakeCollection2:
+        def __init__(self):
+            self._docs = []
+
+        def find(self, *a, **k):
+            return iter(self._docs)
+
+        def find_one(self, filt, *a, **k):
+            return None
+
+        def insert_one(self, doc):
+            self._docs.append(dict(doc))
+            class R:
+                pass
+            return R()
+
+        def update_one(self, filt, update):
+            class R:
+                modified_count = 0
+            return R()
+
+        def delete_one(self, filt):
+            class R:
+                deleted_count = 0
+            return R()
+
+    class FakeDB2:
+        def __init__(self):
+            self.cities = FakeCollection2()
+
+    fake_db2 = FakeDB2()
+    monkeypatch.setattr(dc, 'db', fake_db2)
+
+    # attempt to update a non-existent city
+    success = dc.update_city('Nonexistent', {'population': 123})
+    assert success is False
