@@ -30,3 +30,11 @@ def read_all_countries():
     return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
 
 #to do: implement update and delete functions for countries if needed
+
+
+def read_top_countries():
+    """
+    Finish logic
+    """
+    dbc.connect_db()
+    return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
