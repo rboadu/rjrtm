@@ -84,6 +84,7 @@ class States(Resource):
         return {'message': 'State added successfully', 'state': data}, 201
 
 @api.route('/states/<string:code>')
+
 class StateByCode(Resource):
     @api.marshal_with(state_model)
     def get(self, code):
