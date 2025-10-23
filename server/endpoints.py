@@ -67,7 +67,7 @@ class JournalAdd(Resource):
             return {'error': 'Entry is required'}, 400
         return {'message': 'Entry added', 'entry': entry}, 201
 
-
+# State Endpoints
 @api.route('/states')
 class States(Resource):
     @api.marshal_list_with(state_model)
@@ -83,6 +83,33 @@ class States(Resource):
         ds.create_state(data)
         return {'message': 'State added successfully', 'state': data}, 201
 
+@api.route('/states/<string:code>')
+class StateByCode(Resource):
+    @api.marshal_with(state_model)
+    def get(self, code):
+        """Return a specific state by code."""
+        state = ds.read_state_by_code(code)
+        if state:
+            return state, 200
+        return {'error': 'State not found'}, 404
+
+    @api.expect(state_model)
+    def put(self, code):
+        """Update a state by code."""
+        data = api.payload
+        updated = ds.update_state(code, data)
+        if updated:
+            return {'message': 'State updated', 'state': data}, 200
+        return {'error': 'State not found'}, 404
+
+    def delete(self, code):
+        """Delete a state by code."""
+        deleted = ds.delete_state(code)
+        if deleted:
+            return {'message': 'State deleted'}, 200
+        return {'error': 'State not found'}, 404
+    
+# City Endpoints  
 @api.route('/cities')
 class Cities(Resource):
     @api.marshal_list_with(city_model)
@@ -99,7 +126,6 @@ class Cities(Resource):
             return {"error": "City name required"}, 400
         dc.add_city(data)
         return {'message': 'City added successfully', 'city': data}, 201
-
 
 @api.route('/cities/<string:name>')
 class CityByName(Resource):
