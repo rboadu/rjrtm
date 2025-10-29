@@ -110,48 +110,42 @@ class StateByCode(Resource):
             return {'message': 'State deleted'}, 200
         return {'error': 'State not found'}, 404
     
-# City Endpoints  
 @api.route('/cities')
 class Cities(Resource):
     @api.marshal_list_with(city_model)
     def get(self):
-        """
-        Return all cities, with optional filtering and pagination.
-
-        Query Parameters:
-        - country: filter cities by country name
-        - limit: number of results to return (default 50)
-        - offset: number of results to skip (default 0)
-        """
-        # Get query parameters from URL
+        # (existing code unchanged)
         country = request.args.get("country")
         limit = request.args.get("limit", default=50, type=int)
         offset = request.args.get("offset", default=0, type=int)
-
-        # Fetch all cities from the data layer
         cities = dc.get_all_cities()
-
-        # Optional filter by country
         if country:
             cities = [c for c in cities if c.get("country") == country]
-
-        # Apply pagination
         cities = cities[offset : offset + limit]
-
         return cities
+
     @api.expect(city_model)
     def post(self):
-        """Add a new city."""
-        data = api.payload
-        if not data or "name" not in data:
-            return {"error": "City name required"}, 400
+        """Add a new city with validation."""
+        data = api.payload or {}
+        name = data.get("name")
+        country = data.get("country")
+        population = data.get("population", 0)
+
+        # Basic validation
+        if not name or not country:
+            return {"error": "Fields 'name' and 'country' are required."}, 400
+        if not isinstance(population, int) or population < 0:
+            return {"error": "Population must be a non-negative integer."}, 400
+
         dc.add_city(data)
         return {'message': 'City added successfully', 'city': data}, 201
+
 
 @api.route('/cities/<string:name>')
 class CityByName(Resource):
     def get(self, name):
-        """Return a specific city by name."""
+        # (unchanged)
         city = dc.get_city_by_name(name)
         if city:
             return city, 200
@@ -159,14 +153,20 @@ class CityByName(Resource):
 
     @api.expect(city_model)
     def put(self, name):
-        """Update a city by name."""
-        updates = api.payload
+        """Update a city with validation."""
+        updates = api.payload or {}
+        population = updates.get("population")
+
+        if population is not None:
+            if not isinstance(population, int) or population < 0:
+                return {"error": "Population must be a non-negative integer."}, 400
+
         if dc.update_city(name, updates):
             return {'message': 'City updated'}, 200
         return {'error': 'City not found'}, 404
 
     def delete(self, name):
-        """Delete a city by name."""
+        # (unchanged)
         if dc.delete_city(name):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
