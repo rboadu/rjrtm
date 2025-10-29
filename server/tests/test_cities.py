@@ -45,3 +45,22 @@ def test_delete_city(client):
     """DELETE /cities/<name> should remove city."""
     response = client.delete("/cities/Osaka")
     assert response.status_code in (200, 404)
+
+def test_get_cities_filter_and_pagination(client):
+    """GET /cities with country filter and pagination."""
+    # Add several cities
+    cities_to_add = [
+        {"name": "New York", "country": "USA", "population": 8400000},
+        {"name": "Los Angeles", "country": "USA", "population": 4000000},
+        {"name": "Tokyo", "country": "Japan", "population": 14000000},
+    ]
+    for city in cities_to_add:
+        client.post("/cities", data=json.dumps(city), content_type="application/json")
+
+    # Filter by country
+    resp = client.get("/cities?country=USA&limit=1&offset=1")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert isinstance(data, list)
+    assert all(city["country"] == "USA" for city in data)
+    assert len(data) <= 1
