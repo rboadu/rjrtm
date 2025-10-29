@@ -64,3 +64,41 @@ def test_get_cities_filter_and_pagination(client):
     assert isinstance(data, list)
     assert all(city["country"] == "USA" for city in data)
     assert len(data) <= 1
+
+def test_post_city_missing_name_or_country(client):
+    """POST /cities should reject requests missing required fields."""
+    incomplete_city = {"population": 500000}
+    resp = client.post("/cities", json=incomplete_city)
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+    incomplete_city_2 = {"name": "NoCountry"}
+    resp2 = client.post("/cities", json=incomplete_city_2)
+    assert resp2.status_code == 400
+    assert "error" in resp2.get_json()
+
+
+def test_post_city_invalid_population(client):
+    """POST /cities should reject invalid population values."""
+    invalid_city = {"name": "GhostTown", "country": "Nowhere", "population": -123}
+    resp = client.post("/cities", json=invalid_city)
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+
+def test_put_city_invalid_population(client):
+    """PUT /cities/<name> should reject invalid population."""
+    valid_city = {"name": "Testville", "country": "Nowhere", "population": 100}
+    client.post("/cities", json=valid_city)
+
+    update_invalid = {"population": -50}
+    resp = client.put("/cities/Testville", json=update_invalid)
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+
+def test_post_city_malformed_json(client):
+    """POST /cities should return 400 for malformed JSON."""
+    bad_json = "{name: 'BadCity', country: 'Nowhere'}"  # missing quotes around keys
+    resp = client.post("/cities", data=bad_json, content_type="application/json")
+    assert resp.status_code == 400
