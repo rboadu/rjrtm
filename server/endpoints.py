@@ -115,10 +115,30 @@ class StateByCode(Resource):
 class Cities(Resource):
     @api.marshal_list_with(city_model)
     def get(self):
-        """Return all cities."""
-        cities = dc.get_all_cities()
-        return cities
+        """
+        Return all cities, with optional filtering and pagination.
 
+        Query Parameters:
+        - country: filter cities by country name
+        - limit: number of results to return (default 50)
+        - offset: number of results to skip (default 0)
+        """
+        # Get query parameters from URL
+        country = request.args.get("country")
+        limit = request.args.get("limit", default=50, type=int)
+        offset = request.args.get("offset", default=0, type=int)
+
+        # Fetch all cities from the data layer
+        cities = dc.get_all_cities()
+
+        # Optional filter by country
+        if country:
+            cities = [c for c in cities if c.get("country") == country]
+
+        # Apply pagination
+        cities = cities[offset : offset + limit]
+
+        return cities
     @api.expect(city_model)
     def post(self):
         """Add a new city."""
