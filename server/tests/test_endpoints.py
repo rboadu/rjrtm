@@ -55,3 +55,9 @@ def test_get_countries(client):
     if response.status_code == HTTPStatus.OK:
         resp_json = response.get_json()
         assert isinstance(resp_json, list)
+
+def test_get_country_by_code_not_found(client):
+    """Test GET /countries/<code> with a code that does not exist."""
+    response = client.get('/countries/NO_SUCH_CODE')
+    assert response.status_code == 404
+    assert b"not found" in response.data.lower()
