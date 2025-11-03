@@ -109,6 +109,18 @@ class StateByCode(Resource):
         if deleted:
             return {'message': 'State deleted'}, 200
         return {'error': 'State not found'}, 404
+
+@api.route('/states/<string:code>/patch')
+class StatePatch(Resource):
+    @api.expect(state_model)
+    def patch(self, code):
+        updates = api.payload or {}
+        if not updates:
+            return {'error': 'No updates provided'}, 400
+        updated = ds.update_state(code, updates)
+        if updated:
+            return {'message': 'State updated', 'state': updates}, 200
+        return {'error': 'State not found'}, 404
     
 @api.route('/cities')
 class Cities(Resource):
