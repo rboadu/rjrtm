@@ -48,6 +48,15 @@ def convert_mongo_id(doc: dict):
         doc[MONGO_ID] = str(doc[MONGO_ID])
 
 
+def ensure_connection(func):
+    """Ensures that each call to DB has a connected client."""
+    def wrapper(*args, **kwargs):
+        connect_db()
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@ensure_connection
 def create(collection, doc, db=SE_DB):
     """
     Insert a single doc into collection.
@@ -56,6 +65,7 @@ def create(collection, doc, db=SE_DB):
     return client[db][collection].insert_one(doc)
 
 
+@ensure_connection
 def read_one(collection, filt, db=SE_DB):
     """
     Find with a filter and return on the first doc found.
@@ -66,6 +76,7 @@ def read_one(collection, filt, db=SE_DB):
         return doc
 
 
+@ensure_connection
 def delete(collection: str, filt: dict, db=SE_DB):
     """
     Find with a filter and return on the first doc found.
@@ -75,10 +86,12 @@ def delete(collection: str, filt: dict, db=SE_DB):
     return del_result.deleted_count
 
 
+@ensure_connection
 def update(collection, filters, update_dict, db=SE_DB):
     return client[db][collection].update_one(filters, {'$set': update_dict})
 
 
+@ensure_connection
 def read(collection, db=SE_DB, no_id=True) -> list:
     """
     Returns a list from the db.
@@ -93,6 +106,7 @@ def read(collection, db=SE_DB, no_id=True) -> list:
     return ret
 
 
+@ensure_connection
 def read_dict(collection, key, db=SE_DB, no_id=True) -> dict:
     recs = read(collection, db=db, no_id=no_id)
     recs_as_dict = {}
@@ -101,6 +115,7 @@ def read_dict(collection, key, db=SE_DB, no_id=True) -> dict:
     return recs_as_dict
 
 
+@ensure_connection
 def fetch_all_as_dict(key, collection, db=SE_DB):
     ret = {}
     for doc in client[db][collection].find():
