@@ -29,15 +29,13 @@ def read_all_countries():
     dbc.connect_db()
     return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
 
-#to do: implement update and delete functions for countries if needed
 
+''''
+TODO:
+create_country(doc: dict) -> inserted_id or raise DuplicateError
+read_country_by_code(code: str) -> dict | None (convert _id to string)
+read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]
+update_country(code: str, update_dict: dict) -> bool (True if modified)
+delete_country(code: str) -> int (deleted_count)
 
-def read_top_countries(limit: int = 10, key: str = "population"):
-    """
-    Finish logic
-    """
-    dbc.connect_db()
-
-    docs = list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
-
-    return docs[: limit if limit is not None and limit > 0 else None]
+'''
