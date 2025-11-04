@@ -109,6 +109,17 @@ class StateByCode(Resource):
             return {'message': 'State updated', 'state': data}, 200
         return {'error': 'State not found'}, 404
 
+    @api.expect(state_model)
+    def patch(self, code):
+        """Partially update a state by code."""
+        data = api.payload or {}
+        if not data:
+            return {'error': 'No update fields provided'}, 400
+        updated = ds.update_state(code, data)
+        if updated:
+            return {'message': 'State partially updated', 'state': data}, 200
+        return {'error': 'State not found'}, 404
+
     def delete(self, code):
         """Delete a state by code."""
         deleted = ds.delete_state(code)
