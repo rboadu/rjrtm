@@ -46,3 +46,6 @@ def get_country_by_code(code: str) -> jsonify:
     except Exception as e:
         logger.error(f"Error retrieving country: {e}")
         abort(500, f"Error retrieving country: {e}")
+
+# Add a Delete endpoint for countries (if needed in the future)
+# Add a Create/Update endpoint for countries (if needed in the future)
