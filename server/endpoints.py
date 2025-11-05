@@ -136,14 +136,34 @@ class StatePatch(Resource):
 @api.route('/cities')
 class Cities(Resource):
     @api.marshal_list_with(city_model)
+    @api.doc(params={
+        'country': 'Filter by country name',
+        'name': 'Search city name (case-insensitive substring)',
+        'min_population': 'Minimum population threshold',
+        'max_population': 'Maximum population threshold',
+        'limit': 'Number of results to return (default=50)',
+        'offset': 'Starting index for pagination (default=0)'
+    })
     def get(self):
-        # (existing code unchanged)
+        """Return filtered list of cities."""
         country = request.args.get("country")
+        name = request.args.get("name")
+        min_pop = request.args.get("min_population", type=int)
+        max_pop = request.args.get("max_population", type=int)
         limit = request.args.get("limit", default=50, type=int)
         offset = request.args.get("offset", default=0, type=int)
+
         cities = dc.get_all_cities()
+
         if country:
             cities = [c for c in cities if c.get("country") == country]
+        if name:
+            cities = [c for c in cities if name.lower() in c.get("name", "").lower()]
+        if min_pop is not None:
+            cities = [c for c in cities if c.get("population", 0) >= min_pop]
+        if max_pop is not None:
+            cities = [c for c in cities if c.get("population", 0) <= max_pop]
+
         cities = cities[offset : offset + limit]
         return cities
 
