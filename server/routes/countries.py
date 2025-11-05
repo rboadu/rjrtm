@@ -29,6 +29,9 @@ def get_countries() -> jsonify:
 def get_country_by_code(code: str) -> jsonify:
     """Endpoint to get a specific country by its code (e.g., 'UK')."""
     try:
+        if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
+            logger.warning(f"Invalid country code format: '{code}'")
+            abort(400, f"Invalid country code format: {code}")
         logger.info(f"Request to '/countries/{code}'")
         country = read_country_by_code(code)
         if country:
