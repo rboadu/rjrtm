@@ -49,7 +49,7 @@ def test_get_state_by_code_success(client, state_data, monkeypatch):
 
 # Additional test for GET /states/<code> when state not found
 def test_get_state_by_code_not_found(client, monkeypatch):
-    
+
     def fake_read(_):
         return None
 
@@ -58,3 +58,7 @@ def test_get_state_by_code_not_found(client, monkeypatch):
     assert resp.status_code == 404
     body = resp.get_json()
     assert 'error' in body
+''' TODO:
+- Add more tests for other endpoints and edge cases as needed
+- Also figure out what changes that can be made to improve coverage and overall project.
+'''
