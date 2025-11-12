@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import List, Optional
 
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, request, abort # type: ignore
 
 cities_bp = Blueprint("cities", __name__)
 
@@ -38,30 +38,82 @@ def _next_id(items: List[City]) -> int:
 @cities_bp.get("/cities")
 def list_cities():
     """
-    List cities
+    List cities (with optional filtering and pagination)
     ---
-    tags:
-      - cities
+    tags: [cities]
+    parameters:
+      - in: query
+        name: name
+        type: string
+        required: false
+        description: case-insensitive substring match on name
+      - in: query
+        name: state
+        type: string
+        required: false
+      - in: query
+        name: country_code
+        type: string
+        required: false
+      - in: query
+        name: page
+        type: integer
+        required: false
+        default: 1
+      - in: query
+        name: per_page
+        type: integer
+        required: false
+        default: 25
     responses:
       200:
-        description: List of cities
+        description: Paged list of cities
         schema:
-          type: array
-          items:
-            $ref: '#/definitions/City'
-    definitions:
-      City:
-        type: object
-        properties:
-          id: {type: integer}
-          name: {type: string}
-          state: {type: string}
-          country_code: {type: string}
-          population: {type: integer}
-          lat: {type: number}
-          lon: {type: number}
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/definitions/City'
+            page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }
     """
-    return jsonify([asdict(c) for c in _load()])
+    items = _load()
+    q_name = (request.args.get("name") or "").strip().lower()
+    q_state = (request.args.get("state") or "").strip().lower()
+    q_cc = (request.args.get("country_code") or "").strip().lower()
+
+    def match(c: City) -> bool:
+        ok = True
+        if q_name:
+            ok = ok and q_name in (c.name or "").lower()
+        if q_state:
+            ok = ok and q_state == (c.state or "").lower()
+        if q_cc:
+            ok = ok and q_cc == (c.country_code or "").lower()
+        return ok
+
+    filtered = [c for c in items if match(c)]
+
+    # simple, deterministic sort by name then id
+    filtered.sort(key=lambda c: (c.name or "", c.id))
+
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = max(min(int(request.args.get("per_page", 25)), 100), 1)
+    start = (page - 1) * per_page
+    end = start + per_page
+    window = filtered[start:end]
+
+    return jsonify(
+        {
+            "items": [asdict(c) for c in window],
+            "page": page,
+            "per_page": per_page,
+            "total": len(filtered),
+        }
+    )
+
 
 @cities_bp.get("/cities/<int:city_id>")
 def get_city(city_id: int):
