@@ -21,19 +21,22 @@ def read_country_by_code(code: str):
     dbc.connect_db()
     return dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one({"code": code})
 
-
-def read_all_countries():
+def read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]:
     """
-    Return a list of all countries.
+    Return a list of all countries with optional pagination and sorting.
     """
     dbc.connect_db()
-    return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
+    cursor = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find().skip(skip)
+    if sort:
+        cursor = cursor.sort(sort)
+    if limit > 0:
+        cursor = cursor.limit(limit)
+    return list(cursor)
 
 
 ''''
 TODO:
-create_country(doc: dict) -> inserted_id or raise DuplicateError
-read_country_by_code(code: str) -> dict | None (convert _id to string)
+
 read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]
 update_country(code: str, update_dict: dict) -> bool (True if modified)
 delete_country(code: str) -> int (deleted_count)
