@@ -193,3 +193,6 @@ class CityByName(Resource):
         if dc.delete_city(name):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
+
+if __name__ == "__main__":
+    app.run(debug=True)
