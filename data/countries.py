@@ -33,6 +33,17 @@ def read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]:
         cursor = cursor.limit(limit)
     return list(cursor)
 
+def update_country(code: str, update_dict: dict) -> bool:
+    """
+    Update a country by its code.
+    Returns True if a document was modified, otherwise False.
+    """
+    dbc.connect_db()
+    result = dbc.client[dbc.SE_DB][COUNTRIES_COLL].update_one(
+        {"code": code}, {"$set": update_dict}
+    )
+    return result.modified_count > 0
+
 
 ''''
 TODO:
