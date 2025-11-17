@@ -17,4 +17,11 @@ def root():
 
 
 if __name__ == '__main__':
+    # Ensure DB connection is established when running the server directly
+    try:
+        import data.db_connect as dbc
+        dbc.connect_db()
+        logger.info('Connected to MongoDB')
+    except Exception as e:
+        logger.warning(f'Could not connect to MongoDB: {e}')
     app.run(debug=True)
