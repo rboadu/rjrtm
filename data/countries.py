@@ -57,6 +57,6 @@ def delete_country(code: str) -> int:
 ''''
 TODO:
 
-delete_country(code: str) -> int (deleted_count)
+Add logging for each operation to track successes and failures.
 
 '''
