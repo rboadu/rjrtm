@@ -44,12 +44,19 @@ def update_country(code: str, update_dict: dict) -> bool:
     )
     return result.modified_count > 0
 
+def delete_country(code: str) -> int:
+    """
+    Delete a country by its code.
+    Returns the number of documents deleted (0 or 1).
+    """
+    dbc.connect_db()
+    result = dbc.client[dbc.SE_DB][COUNTRIES_COLL].delete_one({"code": code})
+    return result.deleted_count
+
 
 ''''
 TODO:
 
-read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]
-update_country(code: str, update_dict: dict) -> bool (True if modified)
 delete_country(code: str) -> int (deleted_count)
 
 '''
