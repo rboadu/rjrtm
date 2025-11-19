@@ -133,6 +133,35 @@ class StatePatch(Resource):
             return {'message': 'State updated', 'state': updates}, 200
         return {'error': 'State not found'}, 404
     
+def validate_city_payload(data, partial=False):
+    allowed_fields = {"name", "country", "population"}
+    required_fields = {"name", "country"}
+
+    # Reject unknown fields
+    for field in data:
+        if field not in allowed_fields:
+            return f"Unknown field: '{field}'", False
+
+    # Require all fields unless partial=True (PATCH)
+    if not partial:
+        missing = required_fields - data.keys()
+        if missing:
+            return f"Missing required fields: {', '.join(missing)}", False
+
+    # Type validation
+    if "name" in data and not isinstance(data["name"], str):
+        return "'name' must be a string", False
+
+    if "country" in data and not isinstance(data["country"], str):
+        return "'country' must be a string", False
+
+    if "population" in data:
+        pop = data["population"]
+        if not isinstance(pop, int) or pop < 0:
+            return "'population' must be a non-negative integer", False
+
+    return "", True
+
 @api.route('/cities')
 class Cities(Resource):
     @api.marshal_list_with(city_model)
@@ -179,19 +208,14 @@ class Cities(Resource):
     def post(self):
         """Add a new city with validation."""
         data = api.payload or {}
-        name = data.get("name")
-        country = data.get("country")
-        population = data.get("population", 0)
 
-        # Basic validation
-        if not name or not country:
-            return {"error": "Fields 'name' and 'country' are required."}, 400
-        if not isinstance(population, int) or population < 0:
-            return {"error": "Population must be a non-negative integer."}, 400
+        # Strong validation
+        msg, ok = validate_city_payload(data, partial=False)
+        if not ok:
+            return {"error": msg}, 400
 
         dc.add_city(data)
         return {'message': 'City added successfully', 'city': data}, 201
-
 
 @api.route('/cities/<string:name>')
 class CityByName(Resource):
@@ -206,11 +230,11 @@ class CityByName(Resource):
     def put(self, name):
         """Update a city with validation."""
         updates = api.payload or {}
-        population = updates.get("population")
 
-        if population is not None:
-            if not isinstance(population, int) or population < 0:
-                return {"error": "Population must be a non-negative integer."}, 400
+        # Strong validation (full update)
+        msg, ok = validate_city_payload(updates, partial=False)
+        if not ok:
+            return {"error": msg}, 400
 
         if dc.update_city(name, updates):
             return {'message': 'City updated'}, 200
