@@ -164,6 +164,14 @@ class Cities(Resource):
         if max_pop is not None:
             cities = [c for c in cities if c.get("population", 0) <= max_pop]
 
+        # sorting support
+        sort_by = request.args.get("sort_by")
+        sort_order = request.args.get("sort_order", "asc")
+
+        if sort_by:
+            reverse = sort_order.lower() == "desc"
+            cities.sort(key=lambda c: c.get(sort_by, None), reverse=reverse)
+
         cities = cities[offset : offset + limit]
         return cities
 
