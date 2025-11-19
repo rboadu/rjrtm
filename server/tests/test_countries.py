@@ -25,3 +25,22 @@ def test_get_country_by_code_success(client):
         data = response.get_json()
         assert data['code'] == 'US'
         assert data['name'] == 'United States'
+
+def test_get_country_by_code_not_found(client):
+    """Test retrieval of non-existent country."""
+    with patch('server.routes.countries.read_country_by_code', return_value=None):
+        response = client.get('/countries/XX')
+        assert response.status_code == 404
+
+def test_get_country_invalid_code_format(client):
+    """Test invalid country code format."""
+    response = client.get('/countries/us')  # are lowercase # should fail
+    assert response.status_code == 400
+    
+    response = client.get('/countries/U')  # too short # should fail
+    assert response.status_code == 400
+    
+    response = client.get('/countries/U2')  # contains number # should fail
+    assert response.status_code == 400
+
+# add more granular tests specific to what the endpoints are meant to return
