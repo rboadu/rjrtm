@@ -32,11 +32,11 @@ def test_get_city_by_name(client):
     assert response.status_code in (200, 404)
 
 def test_update_city(client):
-    """PUT /cities/<name> should update population."""
-    updates = {"population": 3000000}
+    """PUT /cities/<name> should update population (full replace)."""
+    full_city = {"name": "Osaka", "country": "Japan", "population": 3000000}
     response = client.put(
         "/cities/Osaka",
-        data=json.dumps(updates),
+        data=json.dumps(full_city),
         content_type="application/json",
     )
     assert response.status_code in (200, 404)
