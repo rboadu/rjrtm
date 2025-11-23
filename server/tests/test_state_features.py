@@ -57,4 +57,28 @@ def test_get_state_by_code_not_found(client, monkeypatch):
     resp = client.get('/states/NOPE')
     assert resp.status_code == 404
     body = resp.get_json()
-    assert 'error' in body
+    assert 'error' in body 
+
+def test_patch_state_success(client, monkeypatch):
+    # Mock update_state to report 1 modified
+    def fake_update(code, updates):
+        assert code == 'TX'
+        assert updates == {'name': 'Texas'}
+        return 1
+
+    monkeypatch.setattr(ds, 'update_state', fake_update)
+    resp = client.patch('/states/TX', json={'name': 'Texas'})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert 'message' in body
+
+
+def test_patch_state_not_found(client, monkeypatch):
+    monkeypatch.setattr(ds, 'update_state', lambda c, u: 0)
+    resp = client.patch('/states/ZZ', json={'name': 'Nowhere'})
+    assert resp.status_code == 404
+
+
+def test_patch_state_empty_payload(client):
+    resp = client.patch('/states/NY', json={})
+    assert resp.status_code == 400
