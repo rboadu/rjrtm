@@ -3,6 +3,11 @@ Data access layer for the 'countries' collection in MongoDB.
 """
 
 import data.db_connect as dbc
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 COUNTRIES_COLL = "countries"
 
