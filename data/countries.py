@@ -16,6 +16,8 @@ def create_country(doc: dict):
     Insert a new country document into MongoDB.
     """
     dbc.connect_db()
+    logger.info(f"Creating country with data: {doc}")
+
     return dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(doc).inserted_id
 
 
