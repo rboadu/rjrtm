@@ -1,107 +1,61 @@
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from typing import Dict, List
+from flask import Blueprint, jsonify, request
+from server.database import db
+from server.models.city_model import City
 
-from flask import Blueprint, jsonify, request, abort
-
-city_bp = Blueprint("city", __name__, url_prefix="/cities")
+city_bp = Blueprint("city_bp", __name__, url_prefix="/city")
 
 
-@dataclass
-class City:
-    id: int
-    name: str
-    state: str
-    country: str
-    created_at: str
-    updated_at: str
+@city_bp.get("/")
+def get_all_cities():
+    cities = City.query.all()
+    return jsonify([c.to_dict() for c in cities]), 200
 
 
-# Simple in-RAM cache for city data.
-# In a later step this can be swapped for a DB layer.
-_CITY_STORE: Dict[int, City] = {}
-_NEXT_ID: int = 1
+@city_bp.get("/<int:city_id>")
+def get_city(city_id):
+    city = City.query.get(city_id)
+    if not city:
+        return jsonify({"error": "City not found"}), 404
+    return jsonify(city.to_dict()), 200
 
 
-def _next_id() -> int:
-    global _NEXT_ID
-    nid = _NEXT_ID
-    _NEXT_ID += 1
-    return nid
-
-
-def _now_iso() -> str:
-    return datetime.utcnow().isoformat() + "Z"
-
-
-@city_bp.route("/", methods=["GET"])
-def list_cities():
-    """Return all cities from the in-memory cache."""
-    return jsonify([asdict(c) for c in _CITY_STORE.values()])
-
-
-@city_bp.route("/", methods=["POST"])
+@city_bp.post("/")
 def create_city():
-    """Create a new city and store it in RAM."""
-    body = request.get_json(silent=True) or {}
-    name = body.get("name")
-    state = body.get("state")
-    country = body.get("country")
+    data = request.get_json() or {}
+    name = data.get("name")
+    state_id = data.get("state_id")
 
-    if not name or not state or not country:
-        abort(400, description="Missing required fields: name, state, country")
+    if not name or not state_id:
+        return jsonify({"error": "name and state_id are required"}), 400
 
-    cid = _next_id()
-    now = _now_iso()
-    city = City(
-        id=cid,
-        name=name,
-        state=state,
-        country=country,
-        created_at=now,
-        updated_at=now,
-    )
-    _CITY_STORE[cid] = city
-    return jsonify(asdict(city)), 201
+    city = City(name=name, state_id=state_id)
+    db.session.add(city)
+    db.session.commit()
+
+    return jsonify(city.to_dict()), 201
 
 
-@city_bp.route("/<int:city_id>", methods=["GET"])
-def get_city(city_id: int):
-    """Fetch a single city by ID."""
-    city = _CITY_STORE.get(city_id)
-    if city is None:
-        abort(404, description="City not found")
-    return jsonify(asdict(city))
+@city_bp.put("/<int:city_id>")
+def update_city(city_id):
+    city = City.query.get(city_id)
+    if not city:
+        return jsonify({"error": "City not found"}), 404
+
+    data = request.get_json() or {}
+
+    city.name = data.get("name", city.name)
+    city.state_id = data.get("state_id", city.state_id)
+
+    db.session.commit()
+    return jsonify(city.to_dict()), 200
 
 
-@city_bp.route("/<int:city_id>", methods=["PUT"])
-def update_city(city_id: int):
-    """Update an existing city (name/state/country)."""
-    city = _CITY_STORE.get(city_id)
-    if city is None:
-        abort(404, description="City not found")
+@city_bp.delete("/<int:city_id>")
+def delete_city(city_id):
+    city = City.query.get(city_id)
+    if not city:
+        return jsonify({"error": "City not found"}), 404
 
-    body = request.get_json(silent=True) or {}
-    name = body.get("name", city.name)
-    state = body.get("state", city.state)
-    country = body.get("country", city.country)
-
-    updated = City(
-        id=city.id,
-        name=name,
-        state=state,
-        country=country,
-        created_at=city.created_at,
-        updated_at=_now_iso(),
-    )
-    _CITY_STORE[city_id] = updated
-    return jsonify(asdict(updated))
-
-
-@city_bp.route("/<int:city_id>", methods=["DELETE"])
-def delete_city(city_id: int):
-    """Delete a city by ID."""
-    if city_id not in _CITY_STORE:
-        abort(404, description="City not found")
-    del _CITY_STORE[city_id]
+    db.session.delete(city)
+    db.session.commit()
     return jsonify({"message": "City deleted"}), 200
