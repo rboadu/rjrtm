@@ -16,7 +16,9 @@ MESSAGE = 'Message'
 JOURNAL_EP = '/journal'
 JOURNAL_RESP = 'journal'
 
+# ==========================
 # Models
+# ==========================
 
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
@@ -29,11 +31,22 @@ city_model = api.model('City', {
     'population': fields.Integer(description='Population of the city')
 })
 
+error_model = api.model('ErrorResponse', {
+    'error': fields.String(description='Error message')
+})
+
+city_created_model = api.model('CityCreatedResponse', {
+    'message': fields.String(example='City added successfully'),
+    'city': fields.Nested(city_model)
+})
+
 journal_model = api.model('JournalEntry', {
     'entry': fields.String(required=True, description='Journal entry text')
 })
 
-# Endpoints
+# ==========================
+# General Endpoints
+# ==========================
 
 @api.route(HELLO_EP)
 class HelloWorld(Resource):
@@ -67,7 +80,12 @@ class JournalAdd(Resource):
             return {'error': 'Entry is required'}, 400
         return {'message': 'Entry added', 'entry': entry}, 201
 
+
+# ==========================
 # State Endpoints
+# ==========================
+# (UNCHANGED — since you are NOT responsible for states)
+
 @api.route('/states')
 class States(Resource):
     @api.marshal_list_with(state_model)
@@ -83,14 +101,13 @@ class States(Resource):
         ds.create_state(data)
         return {'message': 'State added successfully', 'state': data}, 201
 
-@api.route('/states/<string:code>')
 
+@api.route('/states/<string:code>')
 class StateByCode(Resource):
     def get(self, code):
         """Return a specific state by code."""
         state = ds.read_state_by_code(code)
         if state:
-            # Marshal only the successful response to the state model
             return api.marshal(state, state_model), 200
         return {'error': 'State not found'}, 404
 
@@ -121,6 +138,7 @@ class StateByCode(Resource):
             return {'message': 'State deleted'}, 200
         return {'error': 'State not found'}, 404
 
+
 @api.route('/states/<string:code>/patch')
 class StatePatch(Resource):
     @api.expect(state_model)
@@ -132,7 +150,12 @@ class StatePatch(Resource):
         if updated:
             return {'message': 'State updated', 'state': updates}, 200
         return {'error': 'State not found'}, 404
-    
+
+
+# ==========================
+# City Validation Helper
+# ==========================
+
 def validate_city_payload(data, partial=False):
     allowed_fields = {"name", "country", "population"}
     required_fields = {"name", "country"}
@@ -142,7 +165,7 @@ def validate_city_payload(data, partial=False):
         if field not in allowed_fields:
             return f"Unknown field: '{field}'", False
 
-    # Require all fields unless partial=True (PATCH)
+    # Require mandatory fields unless partial=True
     if not partial:
         missing = required_fields - data.keys()
         if missing:
@@ -162,17 +185,32 @@ def validate_city_payload(data, partial=False):
 
     return "", True
 
+
+# ==========================
+# City Endpoints — YOUR PART
+# ==========================
+
 @api.route('/cities')
 class Cities(Resource):
+
     @api.marshal_list_with(city_model)
-    @api.doc(params={
-        'country': 'Filter by country name',
-        'name': 'Search city name (case-insensitive substring)',
-        'min_population': 'Minimum population threshold',
-        'max_population': 'Maximum population threshold',
-        'limit': 'Number of results to return (default=50)',
-        'offset': 'Starting index for pagination (default=0)'
-    })
+    @api.doc(
+        description="Retrieve a list of cities with optional filtering, sorting, and pagination.",
+        params={
+            'country': 'Filter by country name',
+            'name': 'Case-insensitive substring search on city name',
+            'min_population': 'Minimum population value',
+            'max_population': 'Maximum population value',
+            'limit': 'Number of results to return (default=50)',
+            'offset': 'Offset for pagination (default=0)',
+            'sort_by': 'Sort by field: name | country | population',
+            'sort_order': 'Sort order: asc | desc'
+        },
+        responses={
+            200: "List of cities",
+            400: ("Invalid query parameter", error_model)
+        }
+    )
     def get(self):
         """Return filtered list of cities."""
         country = request.args.get("country")
@@ -193,7 +231,6 @@ class Cities(Resource):
         if max_pop is not None:
             cities = [c for c in cities if c.get("population", 0) <= max_pop]
 
-        # sorting support
         sort_by = request.args.get("sort_by")
         sort_order = request.args.get("sort_order", "asc")
 
@@ -204,12 +241,14 @@ class Cities(Resource):
         cities = cities[offset : offset + limit]
         return cities
 
-    @api.expect(city_model)
+    @api.expect(city_model, validate=True)
+    @api.response(201, 'City created successfully', city_created_model)
+    @api.response(400, 'Invalid city payload', error_model)
+    @api.response(409, 'City already exists', error_model)
     def post(self):
         """Add a new city with validation."""
         data = api.payload or {}
 
-        # Strong validation
         msg, ok = validate_city_payload(data, partial=False)
         if not ok:
             return {"error": msg}, 400
@@ -217,21 +256,26 @@ class Cities(Resource):
         dc.add_city(data)
         return {'message': 'City added successfully', 'city': data}, 201
 
+
 @api.route('/cities/<string:name>')
 class CityByName(Resource):
+
+    @api.response(200, 'City retrieved successfully', city_model)
+    @api.response(404, 'City not found', error_model)
     def get(self, name):
-        # (unchanged)
         city = dc.get_city_by_name(name)
         if city:
             return city, 200
         return {'error': 'City not found'}, 404
 
-    @api.expect(city_model)
+    @api.expect(city_model, validate=True)
+    @api.response(200, 'City updated successfully')
+    @api.response(400, 'Invalid update payload', error_model)
+    @api.response(404, 'City not found', error_model)
     def put(self, name):
         """Update a city with validation."""
         updates = api.payload or {}
 
-        # Strong validation (full update)
         msg, ok = validate_city_payload(updates, partial=False)
         if not ok:
             return {"error": msg}, 400
@@ -240,8 +284,9 @@ class CityByName(Resource):
             return {'message': 'City updated'}, 200
         return {'error': 'City not found'}, 404
 
+    @api.response(200, 'City deleted successfully')
+    @api.response(404, 'City not found', error_model)
     def delete(self, name):
-        # (unchanged)
         if dc.delete_city(name):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
