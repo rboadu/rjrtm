@@ -46,3 +46,9 @@ def get_country_by_code(code: str) -> jsonify:
     except Exception as e:
         logger.error(f"Error retrieving country: {e}")
         abort(500, f"Error retrieving country: {e}")
+
+# Additional endpoints (e.g., search) can be added here following similar patterns.
+# Ideally a GET endpoint that makes use of the search_countries_by_name function in data/countries.py
+# eg. @countries_bp.route('/search', methods=['GET'])
+# Maype also implement a filter by region or continent if needed.
+# e.g. @countries_bp.route('/region/<string:region>', methods=['GET'])
