@@ -135,3 +135,56 @@ def test_filter_cities_advanced_queries(client, query, expected_status):
     if "max_population" in query:
         max_pop = int(query.split("max_population=")[1].split("&")[0])
         assert any(c["population"] <= max_pop for c in data)
+
+import json
+from server.database import db
+from server.models.city_model import City
+
+
+def test_create_city(client):
+    response = client.post(
+        "/city/",
+        data=json.dumps({"name": "Seoul", "state_id": 1}),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["name"] == "Seoul"
+    assert data["state_id"] == 1
+
+
+def test_get_cities_empty(client):
+    response = client.get("/city/")
+    assert response.status_code == 200
+    assert response.get_json() == []
+
+
+def test_get_city_not_found(client):
+    response = client.get("/city/99999")
+    assert response.status_code == 404
+
+
+def test_update_city(client):
+    city = City(name="OldCity", state_id=5)
+    db.session.add(city)
+    db.session.commit()
+
+    response = client.put(
+        f"/city/{city.id}",
+        data=json.dumps({"name": "NewCity"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.get_json()["name"] == "NewCity"
+
+
+def test_delete_city(client):
+    city = City(name="DeleteCity", state_id=9)
+    db.session.add(city)
+    db.session.commit()
+
+    response = client.delete(f"/city/{city.id}")
+    assert response.status_code == 200
+
+    response2 = client.get(f"/city/{city.id}")
+    assert response2.status_code == 404
