@@ -82,9 +82,8 @@ class JournalAdd(Resource):
 
 
 # ==========================
-# State Endpoints
+# State Endpoints (UNCHANGED)
 # ==========================
-# (UNCHANGED — since you are NOT responsible for states)
 
 @api.route('/states')
 class States(Resource):
@@ -187,7 +186,7 @@ def validate_city_payload(data, partial=False):
 
 
 # ==========================
-# City Endpoints — YOUR PART
+# City Endpoints (YOUR PART)
 # ==========================
 
 @api.route('/cities')
@@ -241,7 +240,8 @@ class Cities(Resource):
         cities = cities[offset : offset + limit]
         return cities
 
-    @api.expect(city_model, validate=True)
+    # PATCHED: Removed validate=True so tests expect your error format
+    @api.expect(city_model)
     @api.response(201, 'City created successfully', city_created_model)
     @api.response(400, 'Invalid city payload', error_model)
     @api.response(409, 'City already exists', error_model)
@@ -268,7 +268,8 @@ class CityByName(Resource):
             return city, 200
         return {'error': 'City not found'}, 404
 
-    @api.expect(city_model, validate=True)
+    # PATCHED: Removed validate=True so tests expect your error format
+    @api.expect(city_model)
     @api.response(200, 'City updated successfully')
     @api.response(400, 'Invalid update payload', error_model)
     @api.response(404, 'City not found', error_model)
