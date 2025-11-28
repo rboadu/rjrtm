@@ -35,11 +35,12 @@ def connect_db():
             print('Connecting to Mongo in the cloud.')
             client = pm.MongoClient(f'mongodb+srv://rboadu:{password}'
                                     + '@cluster0.thvwqrw.mongodb.net/'
-                                    + '?appName=Cluster0')
+                                    + '?appName=Cluster0')      
         else:
             print("Connecting to Mongo locally.")
             client = pm.MongoClient()
     return client
+
 
 
 def convert_mongo_id(doc: dict):
