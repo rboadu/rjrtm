@@ -26,6 +26,8 @@ def read_country_by_code(code: str):
     Retrieve a country by its code (e.g., 'US').
     """
     dbc.connect_db()
+    logger.info(f"Read the country from the code: {code}")
+
     return dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one({"code": code})
 
 def read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]:
