@@ -36,6 +36,7 @@ def read_all_countries(limit: int = 0, skip: int = 0, sort=None) -> list[dict]:
     """
     dbc.connect_db()
     cursor = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find().skip(skip)
+    logger.info(f"Reading all the countries with limit: {limit}")
     if sort:
         cursor = cursor.sort(sort)
     if limit > 0:
