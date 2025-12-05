@@ -52,3 +52,23 @@ def test_get_country_three_letter_code(client):
         data = response.get_json()
         assert data['code'] == 'USA'
         assert data['name'] == 'United States'
+
+def test_search_countries_success(client):
+    """Test successful search for countries by name."""
+    mock_countries = [
+        {"_id": "507f1f77bcf86cd799439011", "code": "US", "name": "United States"},
+        {"_id": "507f191e810c19729de860ea", "code": "GB", "name": "United Kingdom"}
+    ]
+    
+    with patch('server.routes.countries.search_countries_by_name', return_value=mock_countries):
+        response = client.get('/countries/search?q=united')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert len(data) == 2
+        assert data[0]['name'] == 'United States'
+        assert data[1]['name'] == 'United Kingdom'
+
+def test_search_countries_missing_query(client):
+    """Test search endpoint with missing query parameter."""
+    response = client.get('/countries/search')
+    assert response.status_code == 400
