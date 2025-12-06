@@ -45,5 +45,9 @@ def update_city(name, country, updated_city):
 
 def delete_city(name, country):
     """Delete a specific city by name AND country."""
-    result = db.cities.delete_many({"name": name, "country": country})
+    result = db.cities.delete_one({"name": name, "country": country})
     return result.deleted_count > 0
+
+def reset_cities():
+    """Clear all cities from the database (mock or real)."""
+    db.cities.delete_many({})
