@@ -27,24 +27,34 @@ def test_post_city(client):
     assert "message" in data
 
 def test_get_city_by_name(client):
-    """GET /cities/<name> should return that city."""
-    response = client.get("/cities/Osaka")
-    assert response.status_code in (200, 404)
+    """GET /cities/<name>/<country> should return that city."""
+    # First add a city to test with
+    new_city = {"name": "Osaka", "country": "Japan", "population": 2700000}
+    client.post("/cities", json=new_city)
+    
+    response = client.get("/cities/Osaka/Japan")
+    assert response.status_code == 200
 
 def test_update_city(client):
-    """PUT /cities/<name> should update population (full replace)."""
+    """PUT /cities/<name>/<country> should update population (full replace)."""
+    # First add the city
+    client.post("/cities", json={"name": "Osaka", "country": "Japan", "population": 2700000})
+    
     full_city = {"name": "Osaka", "country": "Japan", "population": 3000000}
     response = client.put(
-        "/cities/Osaka",
+        "/cities/Osaka/Japan",
         data=json.dumps(full_city),
         content_type="application/json",
     )
-    assert response.status_code in (200, 404)
+    assert response.status_code == 200
 
 def test_delete_city(client):
-    """DELETE /cities/<name> should remove city."""
-    response = client.delete("/cities/Osaka")
-    assert response.status_code in (200, 404)
+    """DELETE /cities/<name>/<country> should remove city."""
+    # First add the city
+    client.post("/cities", json={"name": "Osaka", "country": "Japan", "population": 2700000})
+    
+    response = client.delete("/cities/Osaka/Japan")
+    assert response.status_code == 200
 
 def test_get_cities_filter_and_pagination(client):
     """GET /cities with country filter and pagination."""
@@ -87,12 +97,12 @@ def test_post_city_invalid_population(client):
 
 
 def test_put_city_invalid_population(client):
-    """PUT /cities/<name> should reject invalid population."""
+    """PUT /cities/<name>/<country> should reject invalid population."""
     valid_city = {"name": "Testville", "country": "Nowhere", "population": 100}
     client.post("/cities", json=valid_city)
 
     update_invalid = {"population": -50}
-    resp = client.put("/cities/Testville", json=update_invalid)
+    resp = client.put("/cities/Testville/Nowhere", json=update_invalid)
     assert resp.status_code == 400
     assert "error" in resp.get_json()
 
@@ -135,3 +145,20 @@ def test_filter_cities_advanced_queries(client, query, expected_status):
     if "max_population" in query:
         max_pop = int(query.split("max_population=")[1].split("&")[0])
         assert any(c["population"] <= max_pop for c in data)
+
+def test_post_city_duplicate(client):
+    """POST /cities should return 409 if city already exists."""
+
+    city = {"name": "Kyoto", "country": "Japan", "population": 1500000}
+
+    # First add → should succeed (201)
+    resp1 = client.post("/cities", json=city)
+    assert resp1.status_code in (200, 201)
+
+    # Second add → should fail with 409 duplicate error
+    resp2 = client.post("/cities", json=city)
+    assert resp2.status_code == 409
+
+    data = resp2.get_json()
+    assert "error" in data
+    assert "exists" in data["error"].lower()
