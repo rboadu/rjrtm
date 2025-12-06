@@ -240,7 +240,6 @@ class Cities(Resource):
         cities = cities[offset : offset + limit]
         return cities
 
-    # PATCHED: Removed validate=True so tests expect your error format
     @api.expect(city_model)
     @api.response(201, 'City created successfully', city_created_model)
     @api.response(400, 'Invalid city payload', error_model)
@@ -253,27 +252,30 @@ class Cities(Resource):
         if not ok:
             return {"error": msg}, 400
 
-        dc.add_city(data)
-        return {'message': 'City added successfully', 'city': data}, 201
+        try:
+            dc.add_city(data)
+            return {'message': 'City added successfully', 'city': data}, 201
+        except ValueError as e:
+            return {"error": str(e)}, 409
 
 
-@api.route('/cities/<string:name>')
-class CityByName(Resource):
+@api.route('/cities/<string:name>/<string:country>')
+class CityByNameAndCountry(Resource):
 
     @api.response(200, 'City retrieved successfully', city_model)
     @api.response(404, 'City not found', error_model)
-    def get(self, name):
-        city = dc.get_city_by_name(name)
+    def get(self, name, country):
+        """Get a specific city by name and country."""
+        city = dc.get_city_by_name_and_country(name, country)
         if city:
             return city, 200
         return {'error': 'City not found'}, 404
 
-    # PATCHED: Removed validate=True so tests expect your error format
     @api.expect(city_model)
     @api.response(200, 'City updated successfully')
     @api.response(400, 'Invalid update payload', error_model)
     @api.response(404, 'City not found', error_model)
-    def put(self, name):
+    def put(self, name, country):
         """Update a city with validation."""
         updates = api.payload or {}
 
@@ -281,13 +283,14 @@ class CityByName(Resource):
         if not ok:
             return {"error": msg}, 400
 
-        if dc.update_city(name, updates):
+        if dc.update_city(name, country, updates):
             return {'message': 'City updated'}, 200
         return {'error': 'City not found'}, 404
 
     @api.response(200, 'City deleted successfully')
     @api.response(404, 'City not found', error_model)
-    def delete(self, name):
-        if dc.delete_city(name):
+    def delete(self, name, country):
+        """Delete a specific city by name and country."""
+        if dc.delete_city(name, country):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
