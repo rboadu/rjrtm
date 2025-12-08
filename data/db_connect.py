@@ -15,6 +15,32 @@ client = None
 
 MONGO_ID = '_id'
 
+MIN_ID_LEN = 4
+
+user_nm = os.getenv('MONGO_USER_NM', 'datamixmaster')
+cloud_svc = os.getenv('MONGO_HOST', 'datamixmaster.26rvk.mongodb.net')
+passwd = os.environ.get("MONGO_PASSWD", '')
+cloud_mdb = "mongodb+srv"
+db_params = "retryWrites=false&w=majority"
+
+# parameter names of mongo client settings
+SERVER_API_PARAM = 'server_api'
+CONN_TIMEOUT = 'connectTimeoutMS'
+SOCK_TIMEOUT = 'socketTimeoutMS'
+CONNECT = 'connect'
+MAX_POOL_SIZE = 'maxPoolSize'
+
+
+# Recommended Python Anywhere settings.
+# We will use them eveywhere for now, until we determine some
+# other site needs different settings.
+PA_MONGO = os.getenv('PA_MONGO', True)
+PA_SETTINGS = {
+    CONN_TIMEOUT: os.getenv('MONGO_CONN_TIMEOUT', 30000),
+    SOCK_TIMEOUT: os.getenv('MONGO_SOCK_TIMEOUT', None),
+    CONNECT: os.getenv('MONGO_CONNECT', False),
+    MAX_POOL_SIZE: os.getenv('MONGO_MAX_POOL_SIZE', 1),
+}
 
 def connect_db():
     """
