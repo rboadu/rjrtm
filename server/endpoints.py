@@ -279,13 +279,12 @@ class CityByNameAndCountry(Resource):
         """Update a city with validation."""
         updates = api.payload or {}
 
-        msg, ok = validate_city_payload(updates, partial=True)  
+        msg, ok = validate_city_payload(updates, partial=False)
         if not ok:
             return {"error": msg}, 400
 
         if dc.update_city(name, country, updates):
             return {'message': 'City updated'}, 200
-
         return {'error': 'City not found'}, 404
 
     @api.response(200, 'City deleted successfully')
