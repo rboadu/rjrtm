@@ -1,8 +1,13 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 from flask_restx import Resource, Api, fields
 from flask_cors import CORS
 import data.states as ds
 import data.cities as dc
+from werkzeug.exceptions import HTTPException
+import logging
+from pymongo.errors import PyMongoError
+from data.countries import read_all_countries, read_country_by_code, search_countries_by_name
+
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +20,11 @@ HELLO_RESP = 'hello'
 MESSAGE = 'Message'
 JOURNAL_EP = '/journal'
 JOURNAL_RESP = 'journal'
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 # ==========================
 # Models
@@ -189,6 +199,7 @@ def validate_city_payload(data, partial=False):
 # City Endpoints (YOUR PART)
 # ==========================
 
+
 @api.route('/cities')
 class Cities(Resource):
 
@@ -294,3 +305,83 @@ class CityByNameAndCountry(Resource):
         if dc.delete_city(name, country):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
+    
+
+# 7 more endpoints
+
+
+countries_ns = api.namespace('countries', description='Country operations')
+
+logger.info("Countries blueprint initialized.")
+
+@countries_ns.route('/')
+class Countries(Resource):
+    def get(self):
+        try:
+            logger.info("Successful request to '/countries/'")
+            countries = read_all_countries()
+            for c in countries:
+                c['_id'] = str(c['_id'])
+            return jsonify(countries)
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(500, f"Database error: {e}")
+        except Exception as e:
+            logger.error(f"Error retrieving countries: {e}")
+            abort(500, str(e))
+
+
+@countries_ns.route('/<string:code>')
+class CountryByCode(Resource):
+    def get(self, code: str):
+        try:
+            if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
+                logger.warning(f"Invalid country code format: '{code}'")
+                abort(400, f"Invalid country code format: {code}")
+
+            logger.info(f"Request to '/countries/{code}'")
+            country = read_country_by_code(code)
+
+            if country:
+                country['_id'] = str(country['_id'])
+                return jsonify(country)
+            else:
+                logger.warning(f"Country with code '{code}' not found")
+                abort(404, f"Country with code '{code}' not found")
+
+        except HTTPException:
+            # Don't wrap Flask abort() exceptions
+            raise
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(500, f"Database error: {e}")
+        except Exception as e:
+            logger.error(f"Error retrieving country: {e}")
+            abort(500, str(e))
+
+# Ideally a GET endpoint that makes use of the search_countries_by_name function in data/countries.py
+# eg. @api.route('/search', methods=['GET'])
+@countries_ns.route('/search')
+class CountrySearch(Resource):
+    def get(self):
+        try:
+            query = request.args.get('q', '').strip()
+            if not query:
+                abort(400, "Search query parameter 'q' is required")
+
+            logger.info(f"Search request for: '{query}'")
+            countries = search_countries_by_name(query)
+
+            for c in countries:
+                c['_id'] = str(c['_id'])
+
+            return jsonify(countries)
+
+        except HTTPException:
+            raise
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(500, f"Database error: {e}")
+        except Exception as e:
+            logger.error(f"Error searching countries: {e}")
+            abort(500, str(e))

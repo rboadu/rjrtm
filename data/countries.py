@@ -28,3 +28,12 @@ def read_all_countries():
     """
     dbc.connect_db()
     return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
+
+def search_countries_by_name(user_input: str):
+    """
+    Search for countries by name, useful for search features.
+    """
+    dbc.connect_db()
+    return list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find(
+        {"name": {"$regex": user_input, "$options": "i"}}
+    ))
