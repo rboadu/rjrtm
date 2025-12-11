@@ -296,3 +296,50 @@ class CityByNameAndCountry(Resource):
         if dc.delete_city(name, country):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
+
+
+@api.route('/cities/<string:name>')
+class CityByName(Resource):
+
+    @api.response(200, 'City retrieved successfully', city_model)
+    @api.response(404, 'City not found', error_model)
+    def get(self, name):
+        """Get a specific city by name (first match)."""
+        city = dc.get_city_by_name(name)
+        if city:
+            return city, 200
+        return {'error': 'City not found'}, 404
+
+    @api.expect(city_model)
+    @api.response(200, 'City updated successfully')
+    @api.response(400, 'Invalid update payload', error_model)
+    @api.response(404, 'City not found', error_model)
+    def put(self, name):
+        """Update a city by name (uses first matching city to determine country)."""
+        updates = api.payload or {}
+
+        msg, ok = validate_city_payload(updates, partial=True)
+        if not ok:
+            return {"error": msg}, 400
+
+        city = dc.get_city_by_name(name)
+        if not city:
+            return {'error': 'City not found'}, 404
+
+        country = city.get('country')
+        if dc.update_city(name, country, updates):
+            return {'message': 'City updated'}, 200
+
+        return {'error': 'City not found'}, 404
+
+    @api.response(200, 'City deleted successfully')
+    @api.response(404, 'City not found', error_model)
+    def delete(self, name):
+        """Delete a specific city by name (uses first match to determine country)."""
+        city = dc.get_city_by_name(name)
+        if not city:
+            return {'error': 'City not found'}, 404
+        country = city.get('country')
+        if dc.delete_city(name, country):
+            return {'message': 'City deleted'}, 200
+        return {'error': 'City not found'}, 404

@@ -14,7 +14,7 @@ def state_data():
 # Automatically clear in-memory city data before each test
 @pytest.fixture(autouse=True)
 def clear_city_data():
-    """Automatically clear in-memory city data before each test to avoid cross-test pollution."""
+    """Automatically clear in-memory or Mongo-backed city data before each test to avoid cross-test pollution."""
     # Check common attribute names for the in-memory database
     if hasattr(dc, "CITIES_DB"):
         dc.CITIES_DB.clear()
@@ -25,7 +25,12 @@ def clear_city_data():
     elif hasattr(dc, "CITY_DB"):
         dc.CITY_DB.clear()
     else:
-        # As a fallback, try to reset via a helper if it exists
+        # As a fallback, try to reset via helper functions if they exist
         if hasattr(dc, "reset"):
             dc.reset()
+        if hasattr(dc, "reset_cities"):
+            try:
+                dc.reset_cities()
+            except Exception:
+                pass
     yield
