@@ -72,3 +72,28 @@ def test_search_countries_missing_query(client):
     """Test search endpoint with missing query parameter."""
     response = client.get('/countries/search')
     assert response.status_code == 400
+
+def test_create_country_success(client):
+    """Test successful creation of a new country."""
+
+    payload = {
+        "code": "CA",
+        "name": "Canada"
+    }
+
+    # Mock the ID returned by create_country
+    mock_id = "507f1f77bcf86cd799439012"
+
+    with patch('server.endpoints.create_country', return_value=mock_id) as mock_create:
+        response = client.post('/countries/', json=payload)
+
+        assert response.status_code == 201
+
+        data = response.get_json()
+        assert data["message"] == "Country created successfully"
+        assert data["country"]["code"] == "CA"
+        assert data["country"]["name"] == "Canada"
+        assert data["country"]["_id"] == mock_id
+
+        # Ensure create_country was called correctly
+        mock_create.assert_called_once_with(payload)

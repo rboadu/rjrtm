@@ -6,7 +6,7 @@ import data.cities as dc
 from werkzeug.exceptions import HTTPException
 import logging
 from pymongo.errors import PyMongoError
-from data.countries import read_all_countries, read_country_by_code, search_countries_by_name
+from data.countries import read_all_countries, read_country_by_code, search_countries_by_name, create_country
 
 
 app = Flask(__name__)
@@ -30,15 +30,22 @@ logger = logging.getLogger(__name__)
 # Models
 # ==========================
 
+# add country
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
     'name': fields.String(required=True, description='State name, e.g. New York')
 })
 
+# add the state
 city_model = api.model('City', {
     'name': fields.String(required=True, description='City name'),
     'country': fields.String(required=True, description='Country where the city is located'),
     'population': fields.Integer(description='Population of the city')
+})
+
+country_model = api.model('Country', {
+    'code': fields.String(required=True, description='ISO country code (2 or 3 letters)'),
+    'name': fields.String(required=True, description='Country name')
 })
 
 error_model = api.model('ErrorResponse', {
@@ -329,6 +336,42 @@ class Countries(Resource):
         except Exception as e:
             logger.error(f"Error retrieving countries: {e}")
             abort(500, str(e))
+    
+    @api.expect(country_model)
+    @api.response(201, 'Country added successfully')
+    @api.response(400, 'Invalid payload', error_model)
+    @api.response(409, 'Country already exists', error_model)
+    def post(self):
+        try:
+            logger.info("Request to create a new country")
+            country = api.payload or {}
+
+            # Validate fields
+            if "code" not in country or "name" not in country:
+                return {"error": "Both 'code' and 'name' are required"}, 400
+
+            code = country.get("code")
+            if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
+                return {"error": "Invalid country code format"}, 400
+
+            # Try to create
+            new_id = create_country(country)
+
+            return {
+                "message": "Country created successfully",
+                "country": {**country, "_id": str(new_id)}
+            }, 201
+
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(500, f"Database error: {e}")
+
+        except Exception as e:
+            logger.error(f"Unexpected error creating country: {e}")
+            abort(500, str(e))
+
+
+
 
 
 @countries_ns.route('/<string:code>')
@@ -385,3 +428,5 @@ class CountrySearch(Resource):
         except Exception as e:
             logger.error(f"Error searching countries: {e}")
             abort(500, str(e))
+
+
