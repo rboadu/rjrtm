@@ -23,7 +23,7 @@ JOURNAL_RESP = 'journal'
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
     'name': fields.String(required=True, description='State name, e.g. New York'),
-    'country': fields.String(required=False, description='Country of the state')
+    'country': fields.String(required=False, description='Country of the state', example='USA')
 
 })
 
