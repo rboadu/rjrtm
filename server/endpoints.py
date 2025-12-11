@@ -3,10 +3,11 @@ from flask_restx import Resource, Api, fields
 from flask_cors import CORS
 import data.states as ds
 import data.cities as dc
+from http import HTTPStatus
 from werkzeug.exceptions import HTTPException
 import logging
 from pymongo.errors import PyMongoError
-from data.countries import read_all_countries, read_country_by_code, search_countries_by_name, create_country
+from data.countries import delete_country_by_code, read_all_countries, read_country_by_code, search_countries_by_name, create_country
 
 
 app = Flask(__name__)
@@ -30,13 +31,13 @@ logger = logging.getLogger(__name__)
 # Models
 # ==========================
 
-# add country
+# add country (tree hierarchy)
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
     'name': fields.String(required=True, description='State name, e.g. New York')
 })
 
-# add the state
+# add the state (tree hierarchy)
 city_model = api.model('City', {
     'name': fields.String(required=True, description='City name'),
     'country': fields.String(required=True, description='Country where the city is located'),
@@ -317,6 +318,10 @@ class CityByNameAndCountry(Resource):
 # 7 more endpoints
 
 
+# ==========================
+# Country Endpoints
+# ==========================
+
 countries_ns = api.namespace('countries', description='Country operations')
 
 logger.info("Countries blueprint initialized.")
@@ -324,6 +329,7 @@ logger.info("Countries blueprint initialized.")
 @countries_ns.route('/')
 class Countries(Resource):
     def get(self):
+        """Retrieve all countries."""
         try:
             logger.info("Successful request to '/countries/'")
             countries = read_all_countries()
@@ -342,6 +348,7 @@ class Countries(Resource):
     @api.response(400, 'Invalid payload', error_model)
     @api.response(409, 'Country already exists', error_model)
     def post(self):
+        """Create a new country."""
         try:
             logger.info("Request to create a new country")
             country = api.payload or {}
@@ -371,12 +378,10 @@ class Countries(Resource):
             abort(500, str(e))
 
 
-
-
-
 @countries_ns.route('/<string:code>')
 class CountryByCode(Resource):
     def get(self, code: str):
+        """Retrieve a country by its code."""
         try:
             if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
                 logger.warning(f"Invalid country code format: '{code}'")
@@ -401,12 +406,35 @@ class CountryByCode(Resource):
         except Exception as e:
             logger.error(f"Error retrieving country: {e}")
             abort(500, str(e))
+    def delete(self, code: str):
+        """Delete a country by its code."""
+        try:
+            if not code.isalpha() or not code.isupper() or len(code) not in (2, 3):
+                logger.warning(f"Invalid country code format: '{code}'")
+                abort(HTTPStatus.BAD_REQUEST, f"Invalid country code format: {code}")
+
+            logger.info(f"Request to delete country '{code}'")
+            deleted_count = delete_country_by_code(code)
+            if deleted_count:
+                return {"message": f"Country '{code}' deleted successfully"}, HTTPStatus.OK
+            else:
+                logger.warning(f"Country with code '{code}' not found for deletion")
+                abort(404, f"Country with code '{code}' not found")
+        except HTTPException:
+            raise
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
+        except Exception as e:
+            logger.error(f"Error deleting country: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
 # Ideally a GET endpoint that makes use of the search_countries_by_name function in data/countries.py
 # eg. @api.route('/search', methods=['GET'])
 @countries_ns.route('/search')
 class CountrySearch(Resource):
     def get(self):
+        """Search for countries by name."""
         try:
             query = request.args.get('q', '').strip()
             if not query:
