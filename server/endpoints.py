@@ -104,8 +104,9 @@ class JournalAdd(Resource):
 # ==========================
 # State Endpoints 
 # ==========================
+states_ns = api.namespace('states', description='States operations')
 
-@api.route('/states')
+@states_ns.route('/states')
 class States(Resource):
     @api.marshal_list_with(state_model)
     def get(self):
@@ -130,7 +131,7 @@ class States(Resource):
         return {'message': 'State added successfully', 'state': state_copy}, 201
 
 
-@api.route('/states/bulk')
+@states_ns.route('/states/bulk')
 class StatesBulk(Resource):
     @api.expect([state_model])
     def post(self):
@@ -169,7 +170,7 @@ class StatesBulk(Resource):
         return {'created': inserted_ids, 'errors': errors}, 201
 
 
-@api.route('/states/<string:code>')
+@states_ns.route('/states/<string:code>')
 class StateByCode(Resource):
     def get(self, code):
         """Return a specific state by code."""
@@ -206,7 +207,7 @@ class StateByCode(Resource):
         return {'error': 'State not found'}, 404
 
 
-@api.route('/states/<string:code>/patch')
+@states_ns.route('/states/<string:code>/patch')
 class StatePatch(Resource):
     @api.expect(state_model)
     def patch(self, code):
@@ -257,8 +258,9 @@ def validate_city_payload(data, partial=False):
 # City Endpoints 
 # ==========================
 
+cities_ns = api.namespace('cities', description='Cities operations')
 
-@api.route('/cities')
+@cities_ns.route('/cities')
 class Cities(Resource):
 
     @api.marshal_list_with(city_model)
@@ -328,7 +330,7 @@ class Cities(Resource):
             return {"error": str(e)}, 409
 
 
-@api.route('/cities/<string:name>/<string:country>')
+@cities_ns.route('/cities/<string:name>/<string:country>')
 class CityByNameAndCountry(Resource):
 
     @api.response(200, 'City retrieved successfully', city_model)
@@ -365,7 +367,7 @@ class CityByNameAndCountry(Resource):
         return {'error': 'City not found'}, 404
 
 
-@api.route('/cities/<string:name>')
+@cities_ns.route('/cities/<string:name>')
 class CityByName(Resource):
 
     @api.response(200, 'City retrieved successfully', city_model)
