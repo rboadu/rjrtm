@@ -427,6 +427,48 @@ class CityByName(Resource):
             return {'message': 'City deleted'}, 200
         return {'error': 'City not found'}, 404
     
+@cities_ns.route('/bulk')
+class CitiesBulk(Resource):
+
+    @api.expect([city_model])
+    @api.response(201, 'Cities created successfully')
+    @api.response(400, 'Invalid payload', error_model)
+    @api.response(409, 'No cities created', error_model)
+    def post(self):
+        """Create multiple cities in one request."""
+        payload = api.payload
+
+        if not isinstance(payload, list):
+            return {'error': 'Payload must be a list of city objects'}, 400
+
+        created = []
+        errors = []
+
+        for idx, city in enumerate(payload):
+            msg, ok = validate_city_payload(city, partial=False)
+            if not ok:
+                errors.append(f'Item {idx}: {msg}')
+                continue
+
+            try:
+                created_city = dc.add_city(city)
+                created.append(created_city)
+            except ValueError as e:
+                errors.append(f'Item {idx}: {str(e)}')
+
+        if not created:
+            return {
+                'error': 'No cities created',
+                'details': errors
+            }, 409
+
+        return {
+            'message': 'Bulk city creation complete',
+            'created': created,
+            'errors': errors
+        }, 201
+
+    
 
 # ==========================
 # Country Endpoints 
