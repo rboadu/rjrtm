@@ -117,8 +117,56 @@ class States(Resource):
     def post(self):
         """Add a new state."""
         data = api.payload
-        ds.create_state(data)
-        return {'message': 'State added successfully', 'state': data}, 201
+        inserted_id = ds.create_state(data)
+        # avoid returning raw ObjectId which is not JSON serializable
+        state_copy = dict(data or {})
+        # prefer any _id already present on the dict (pymongo may have mutated it)
+        returned_id = state_copy.get('_id', inserted_id)
+        try:
+            state_copy['_id'] = str(returned_id)
+        except Exception:
+            state_copy['_id'] = returned_id
+
+        return {'message': 'State added successfully', 'state': state_copy}, 201
+
+
+@api.route('/states/bulk')
+class StatesBulk(Resource):
+    @api.expect([state_model])
+    def post(self):
+        """Create multiple states in a single request.
+
+        Expects a JSON array of state documents.
+        """
+        payload = api.payload
+        if payload is None:
+            return {'error': 'Payload required (list of state documents)'}, 400
+
+        if not isinstance(payload, list):
+            return {'error': 'Payload must be a list of state documents'}, 400
+
+        # validate basic shape
+        valid_docs = []
+        errors = []
+        for idx, item in enumerate(payload):
+            if not isinstance(item, dict):
+                errors.append(f'Item {idx} is not an object')
+                continue
+            if 'code' not in item or 'name' not in item:
+                errors.append(f'Item {idx} missing required fields: code and name')
+                continue
+            valid_docs.append(item)
+
+        if not valid_docs:
+            return {'error': 'No valid state documents to insert', 'details': errors}, 400
+
+        try:
+            inserted_ids = ds.create_states_bulk(valid_docs)
+        except Exception as e:
+            logger.exception('Bulk insert failed')
+            return {'error': 'Bulk insert failed', 'details': str(e)}, 500
+
+        return {'created': inserted_ids, 'errors': errors}, 201
 
 
 @api.route('/states/<string:code>')

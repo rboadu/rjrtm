@@ -62,3 +62,25 @@ def delete_state(code: str):
     # invalidate cache on delete
     cache.invalidate('states:all')
     return result.deleted_count
+
+
+def create_states_bulk(docs: list):
+    """
+    Insert multiple state documents in one operation.
+
+    Returns a list of inserted id strings.
+    """
+    if not isinstance(docs, list):
+        raise TypeError("docs must be a list of dicts")
+
+    # ensure all items are dict-like
+    valid_docs = [d for d in docs if isinstance(d, dict)]
+    if not valid_docs:
+        return []
+
+    dbc.connect_db()
+    res = dbc.client[dbc.SE_DB][STATES_COLL].insert_many(valid_docs)
+    # invalidate cached states list once after bulk insert
+    cache.invalidate('states:all')
+    # return stringified ids for readability
+    return [str(i) for i in res.inserted_ids]

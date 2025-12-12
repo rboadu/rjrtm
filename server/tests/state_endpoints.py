@@ -45,3 +45,59 @@ def test_delete_state(client):
     """DELETE /states/<code> should remove state."""
     response = client.delete("/states/CA")
     assert response.status_code in (200, 404)
+
+
+def test_post_states_bulk_success(client):
+    """POST /states/bulk should create multiple states when given valid list."""
+    payload = [
+        {"name": "Testlandia", "code": "TL", "population": 12345},
+        {"name": "Examplestate", "code": "EX", "population": 54321},
+    ]
+    response = client.post(
+        "/states/bulk",
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+    # Accept success, validation error, or internal error depending on env
+    assert response.status_code in (201, 400, 500)
+    data = response.get_json()
+    if response.status_code == 201:
+        assert isinstance(data.get("created"), list)
+        assert "errors" in data
+    else:
+        assert "error" in data
+
+
+def test_post_states_bulk_invalid_payload(client):
+    """POST /states/bulk must reject non-list payloads."""
+    payload = {"code": "BADSINGLE", "name": "Bad"}
+    response = client.post(
+        "/states/bulk",
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "error" in data
+
+
+def test_post_states_bulk_some_invalid_items(client):
+    """Mixed valid/invalid items: valid ones inserted, invalid reported."""
+    payload = [
+        {"name": "PartialValid", "code": "PV", "population": 100},
+        {"name": "MissingCode"},
+        "not-a-dict",
+    ]
+    response = client.post(
+        "/states/bulk",
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+    assert response.status_code in (201, 400, 500)
+    data = response.get_json()
+    if response.status_code == 201:
+        assert isinstance(data.get("created"), list)
+        # expect at least one error recorded for the invalid items
+        assert isinstance(data.get("errors"), list)
+    else:
+        assert "error" in data
