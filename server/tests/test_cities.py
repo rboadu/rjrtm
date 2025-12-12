@@ -8,6 +8,11 @@ TEST_CLIENT = ep.app.test_client()
 def client():
     return ep.app.test_client()
 
+@pytest.fixture(autouse=True)
+def clear_cities():
+    db = ep.dc.db 
+    db.cities.delete_many({})
+
 def test_get_all_cities(client):
     """GET /cities should return list (even if empty)."""
     response = client.get("/cities")
