@@ -1,36 +1,28 @@
 import pytest
 import server.endpoints as ep
-import data.cities as dc
+from data.db_connect import connect_db, SE_DB
 
-#Fixture to provide a test client for the endpoints
+# --------------------------------------------------
+# Flask test client
+# --------------------------------------------------
 @pytest.fixture
 def client():
     return ep.app.test_client()
 
+
+# --------------------------------------------------
+# Sample state data (used by endpoint tests)
+# --------------------------------------------------
 @pytest.fixture
 def state_data():
     return {"code": "TX", "name": "Texas"}
 
-# Automatically clear in-memory city data before each test
+
+# --------------------------------------------------
+# MongoDB cleanup (REAL, not fake in-memory)
+# Runs before every test to prevent state leakage
+# --------------------------------------------------
 @pytest.fixture(autouse=True)
-def clear_city_data():
-    """Automatically clear in-memory or Mongo-backed city data before each test to avoid cross-test pollution."""
-    # Check common attribute names for the in-memory database
-    if hasattr(dc, "CITIES_DB"):
-        dc.CITIES_DB.clear()
-    elif hasattr(dc, "cities"):
-        dc.cities.clear()
-    elif hasattr(dc, "CITY_DATA"):
-        dc.CITY_DATA.clear()
-    elif hasattr(dc, "CITY_DB"):
-        dc.CITY_DB.clear()
-    else:
-        # As a fallback, try to reset via helper functions if they exist
-        if hasattr(dc, "reset"):
-            dc.reset()
-        if hasattr(dc, "reset_cities"):
-            try:
-                dc.reset_cities()
-            except Exception:
-                pass
-    yield
+def clear_db_each_test():
+    client = connect_db()
+    client.drop_database(SE_DB)

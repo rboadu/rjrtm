@@ -335,8 +335,11 @@ class Cities(Resource):
             return {"error": msg}, 400
 
         try:
-            dc.add_city(data)
-            return {'message': 'City added successfully', 'city': data}, 201
+            created_city = dc.add_city(data)   # ← USE RETURN VALUE
+            return {
+                'message': 'City added successfully',
+                'city': created_city
+            }, 201
         except ValueError as e:
             return {"error": str(e)}, 409
 
