@@ -1,13 +1,19 @@
 from data.db_connect import connect_db, SE_DB, convert_mongo_id
+import data.cache as cache
 
 client = connect_db()
 db = client[SE_DB]
 
 def get_all_cities():
     """Return a list of all cities."""
+    # Try cache first
+    cached = cache.get('cities:all')
+    if cached is not None:
+        return cached
     cities = list(db.cities.find())
     for city in cities:
         convert_mongo_id(city)
+    cache.set('cities:all', cities)
     return cities
 
 def get_city_by_name(name):
@@ -33,6 +39,8 @@ def add_city(city):
     
     result = db.cities.insert_one(city)
     city["_id"] = str(result.inserted_id)
+    # Invalidate cache on insert
+    cache.invalidate('cities:all')
     return city
 
 def update_city(name, country, updated_city):
@@ -41,11 +49,15 @@ def update_city(name, country, updated_city):
         {"name": name, "country": country}, 
         {"$set": updated_city}
     )
+    # Invalidate cache on update
+    cache.invalidate('cities:all')
     return result.modified_count > 0
 
 def delete_city(name, country):
     """Delete a specific city by name AND country."""
     result = db.cities.delete_one({"name": name, "country": country})
+    # Invalidate cache on delete
+    cache.invalidate('cities:all')
     return result.deleted_count > 0
 
 def reset_cities():
