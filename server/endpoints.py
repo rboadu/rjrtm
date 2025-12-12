@@ -106,7 +106,7 @@ class JournalAdd(Resource):
 # ==========================
 states_ns = api.namespace('states', description='States operations')
 
-@states_ns.route('/states')
+@states_ns.route('')
 class States(Resource):
     @api.marshal_list_with(state_model)
     def get(self):
@@ -131,7 +131,7 @@ class States(Resource):
         return {'message': 'State added successfully', 'state': state_copy}, 201
 
 
-@states_ns.route('/states/bulk')
+@states_ns.route('/bulk')
 class StatesBulk(Resource):
     @api.expect([state_model])
     def post(self):
@@ -170,7 +170,7 @@ class StatesBulk(Resource):
         return {'created': inserted_ids, 'errors': errors}, 201
 
 
-@states_ns.route('/states/<string:code>')
+@states_ns.route('/<string:code>')
 class StateByCode(Resource):
     def get(self, code):
         """Return a specific state by code."""
@@ -207,7 +207,7 @@ class StateByCode(Resource):
         return {'error': 'State not found'}, 404
 
 
-@states_ns.route('/states/<string:code>/patch')
+@states_ns.route('/<string:code>/patch')
 class StatePatch(Resource):
     @api.expect(state_model)
     def patch(self, code):
@@ -218,6 +218,17 @@ class StatePatch(Resource):
         if updated:
             return {'message': 'State updated', 'state': updates}, 200
         return {'error': 'State not found'}, 404
+
+
+@states_ns.route('/country/<string:country>')
+class StatesByCountry(Resource):
+    @api.marshal_list_with(state_model)
+    def get(self, country):
+        """Return all states for a given country."""
+        states = ds.read_states_by_country(country)
+        if states:
+            return states, 200
+        return {'error': f'No states found for country: {country}'}, 404
 
 
 # ==========================
@@ -260,7 +271,7 @@ def validate_city_payload(data, partial=False):
 
 cities_ns = api.namespace('cities', description='Cities operations')
 
-@cities_ns.route('/cities')
+@cities_ns.route('')
 class Cities(Resource):
 
     @api.marshal_list_with(city_model)
@@ -330,7 +341,7 @@ class Cities(Resource):
             return {"error": str(e)}, 409
 
 
-@cities_ns.route('/cities/<string:name>/<string:country>')
+@cities_ns.route('/<string:name>/<string:country>')
 class CityByNameAndCountry(Resource):
 
     @api.response(200, 'City retrieved successfully', city_model)
@@ -367,7 +378,7 @@ class CityByNameAndCountry(Resource):
         return {'error': 'City not found'}, 404
 
 
-@cities_ns.route('/cities/<string:name>')
+@cities_ns.route('/<string:name>')
 class CityByName(Resource):
 
     @api.response(200, 'City retrieved successfully', city_model)
@@ -424,7 +435,7 @@ logger.info("Countries blueprint initialized.")
 
 @countries_ns.route('/')
 class CountriesList(Resource):
-    """Retrieve all countries"""
+    """Retrieve all countries or create a new country"""
     
     @api.marshal_list_with(country_model, mask=None)
     @api.doc(description="Retrieve all countries from the database")
@@ -443,11 +454,6 @@ class CountriesList(Resource):
             logger.error(f"Error retrieving countries: {e}")
             abort(500, str(e))
 
-
-@countries_ns.route('/create')
-class CountryCreate(Resource):
-    """Create a new country"""
-    
     @api.expect(country_model)
     @api.response(201, 'Country added successfully')
     @api.response(400, 'Invalid payload', error_model)

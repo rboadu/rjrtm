@@ -82,3 +82,39 @@ def test_patch_state_not_found(client, monkeypatch):
 def test_patch_state_empty_payload(client):
     resp = client.patch('/states/NY', json={})
     assert resp.status_code == 400
+
+
+# Tests for GET /states/country/<country>
+def test_get_states_by_country_success(client, monkeypatch):
+    """Test getting states for a specific country"""
+    states_data = [
+        {'code': 'TX', 'name': 'Texas', 'country': 'USA'},
+        {'code': 'CA', 'name': 'California', 'country': 'USA'},
+    ]
+    
+    def fake_read(country):
+        assert country == 'USA'
+        return states_data
+    
+    monkeypatch.setattr(ds, 'read_states_by_country', fake_read)
+    resp = client.get('/states/country/USA')
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert isinstance(body, list)
+    assert len(body) == 2
+    assert body[0]['code'] == 'TX'
+    assert body[1]['code'] == 'CA'
+
+def test_get_states_by_country_single_state(client, monkeypatch):
+    """Test getting states for a country with only one state"""
+    states_data = [{'code': 'ON', 'name': 'Ontario', 'country': 'Canada'}]
+    
+    def fake_read(country):
+        return states_data if country == 'Canada' else []
+    
+    monkeypatch.setattr(ds, 'read_states_by_country', fake_read)
+    resp = client.get('/states/country/Canada')
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert len(body) == 1
+    assert body[0]['name'] == 'Ontario'

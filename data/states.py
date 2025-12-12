@@ -84,3 +84,11 @@ def create_states_bulk(docs: list):
     cache.invalidate('states:all')
     # return stringified ids for readability
     return [str(i) for i in res.inserted_ids]
+
+
+def read_states_by_country(country: str):
+    """
+    Reads all state documents for a given country.
+    """
+    dbc.connect_db()
+    return list(dbc.client[dbc.SE_DB][STATES_COLL].find({"country": country}))
