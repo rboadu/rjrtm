@@ -63,8 +63,10 @@ def connect_db():
                                     + '@cluster0.thvwqrw.mongodb.net/'
                                     + '?appName=Cluster0')      
         else:
-            print("Connecting to Mongo locally.")
-            client = pm.MongoClient()
+            print("Connecting to Mongo locally at mongodb://localhost:27017")
+            client = pm.MongoClient("mongodb://localhost:27017",
+                                    serverSelectionTimeoutMS=3000)
+
     return client
 
 
