@@ -6,7 +6,7 @@ import data.cities as dc
 from werkzeug.exceptions import HTTPException
 import logging
 from pymongo.errors import PyMongoError
-from data.countries import read_all_countries, read_country_by_code, search_countries_by_name, create_country
+from data.countries import read_all_countries, read_country_by_code, search_countries_by_name, create_country, delete_country_by_code
 
 
 app = Flask(__name__)
@@ -421,26 +421,38 @@ countries_ns = api.namespace('countries', description='Country operations')
 logger.info("Countries blueprint initialized.")
 
 @countries_ns.route('/')
-class Countries(Resource):
+class CountriesList(Resource):
+    """Retrieve all countries"""
+    
+    @api.marshal_list_with(country_model, mask=None)
+    @api.doc(description="Retrieve all countries from the database")
+    @api.response(200, 'List of countries')
+    @api.response(500, 'Database error', error_model)
     def get(self):
+        """Get all countries."""
         try:
             logger.info("Successful request to '/countries/'")
             countries = read_all_countries()
-            for c in countries:
-                c['_id'] = str(c['_id'])
-            return jsonify(countries)
+            return countries
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
             abort(500, f"Database error: {e}")
         except Exception as e:
             logger.error(f"Error retrieving countries: {e}")
             abort(500, str(e))
+
+
+@countries_ns.route('/create')
+class CountryCreate(Resource):
+    """Create a new country"""
     
     @api.expect(country_model)
     @api.response(201, 'Country added successfully')
     @api.response(400, 'Invalid payload', error_model)
     @api.response(409, 'Country already exists', error_model)
+    @api.response(500, 'Database error', error_model)
     def post(self):
+        """Create a new country."""
         try:
             logger.info("Request to create a new country")
             country = api.payload or {}
@@ -472,7 +484,16 @@ class Countries(Resource):
 
 @countries_ns.route('/<string:code>')
 class CountryByCode(Resource):
+    """Get a specific country by code"""
+    
+    @api.marshal_with(country_model, mask=None)
+    @api.doc(description="Retrieve a specific country by its code")
+    @api.response(200, 'Country retrieved successfully')
+    @api.response(400, 'Invalid country code format', error_model)
+    @api.response(404, 'Country not found', error_model)
+    @api.response(500, 'Database error', error_model)
     def get(self, code: str):
+        """Get a country by code."""
         try:
             if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
                 logger.warning(f"Invalid country code format: '{code}'")
@@ -482,14 +503,12 @@ class CountryByCode(Resource):
             country = read_country_by_code(code)
 
             if country:
-                country['_id'] = str(country['_id'])
-                return jsonify(country)
+                return country
             else:
                 logger.warning(f"Country with code '{code}' not found")
                 abort(404, f"Country with code '{code}' not found")
 
         except HTTPException:
-            # Don't wrap Flask abort() exceptions
             raise
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
@@ -498,11 +517,21 @@ class CountryByCode(Resource):
             logger.error(f"Error retrieving country: {e}")
             abort(500, str(e))
 
-# Ideally a GET endpoint that makes use of the search_countries_by_name function in data/countries.py
-# eg. @api.route('/search', methods=['GET'])
+
 @countries_ns.route('/search')
 class CountrySearch(Resource):
+    """Search endpoint for countries"""
+    
+    @api.marshal_list_with(country_model, mask=None)
+    @api.doc(
+        description="Search for countries by name (case-insensitive partial match)",
+        params={'q': {'description': 'Search query string', 'type': 'string', 'required': True}}
+    )
+    @api.response(200, 'Search results')
+    @api.response(400, 'Missing search query', error_model)
+    @api.response(500, 'Database error', error_model)
     def get(self):
+        """Search countries by name."""
         try:
             query = request.args.get('q', '').strip()
             if not query:
@@ -511,10 +540,7 @@ class CountrySearch(Resource):
             logger.info(f"Search request for: '{query}'")
             countries = search_countries_by_name(query)
 
-            for c in countries:
-                c['_id'] = str(c['_id'])
-
-            return jsonify(countries)
+            return countries
 
         except HTTPException:
             raise
@@ -526,4 +552,37 @@ class CountrySearch(Resource):
             abort(500, str(e))
 
 
-# all for the sake of fixing this
+@countries_ns.route('/delete/<string:code>')
+class CountryDelete(Resource):
+    """Delete a specific country"""
+    
+    @api.doc(description="Delete a country by its code")
+    @api.response(200, 'Country deleted successfully')
+    @api.response(400, 'Invalid country code format', error_model)
+    @api.response(404, 'Country not found', error_model)
+    @api.response(500, 'Database error', error_model)
+    def delete(self, code: str):
+        """Delete a country by code."""
+        try:
+            if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
+                logger.warning(f"Invalid country code format: '{code}'")
+                abort(400, f"Invalid country code format: {code}")
+
+            logger.info(f"Request to delete country: '{code}'")
+            
+            deleted_count = delete_country_by_code(code)
+
+            if deleted_count > 0:
+                return {'message': f"Country '{code}' deleted successfully"}, 200
+            else:
+                logger.warning(f"Country with code '{code}' not found")
+                abort(404, f"Country with code '{code}' not found")
+
+        except HTTPException:
+            raise
+        except PyMongoError as e:
+            logger.error(f"Database error: {e}")
+            abort(500, f"Database error: {e}")
+        except Exception as e:
+            logger.error(f"Error deleting country: {e}")
+            abort(500, str(e))
