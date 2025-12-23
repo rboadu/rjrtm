@@ -13,7 +13,7 @@ def create_country(doc: dict):
     """
     dbc.connect_db()
     res = dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(doc).inserted_id
-    # add to cache
+    cache.invalidate('countries:all')
     return res
 
 def delete_country_by_code(code: str):
@@ -21,9 +21,10 @@ def delete_country_by_code(code: str):
     Delete a country by its code (e.g., 'US').
     """
     dbc.connect_db()
-    if cache[code]:
-        cache.invalidate(code)
-    return dbc.client[dbc.SE_DB][COUNTRIES_COLL].delete_one({"code": code}).deleted_count
+    result = dbc.client[dbc.SE_DB][COUNTRIES_COLL].delete_one({"code": code})
+    if result.deleted_count > 0:
+        cache.invalidate('countries:all')
+    return result.deleted_count
 
 def read_country_by_code(code: str):
     """

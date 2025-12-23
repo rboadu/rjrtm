@@ -59,9 +59,22 @@ def connect_db():
                 raise ValueError('You must set your password '
                                  + 'to use Mongo in the cloud.')
             print('Connecting to Mongo in the cloud.')
-            client = pm.MongoClient(f'mongodb+srv://rboadu:{password}'
-                                    + '@cluster0.thvwqrw.mongodb.net/'
-                                    + '?appName=Cluster0')      
+            
+            # Use environment variables for connection details
+            user = os.getenv('MONGO_USER_NM', 'rboadu')
+            host = os.getenv('MONGO_HOST', 'cluster0.thvwqrw.mongodb.net')
+            app_name = os.getenv('MONGO_APP_NAME', 'Cluster0')
+            
+            connection_string = f'mongodb+srv://{user}:{password}@{host}/?appName={app_name}'
+            
+            # Apply PythonAnywhere settings if PA_MONGO is enabled
+            if PA_MONGO:
+                client = pm.MongoClient(connection_string, **PA_SETTINGS)
+                print(f'Connected with PythonAnywhere settings: {PA_SETTINGS}')
+            else:
+                client = pm.MongoClient(connection_string)
+                
+            print(f'Connected to MongoDB at {host} as user {user}')
         else:
             print("Connecting to Mongo locally at mongodb://localhost:27017")
             client = pm.MongoClient("mongodb://localhost:27017",

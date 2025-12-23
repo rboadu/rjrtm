@@ -1,6 +1,7 @@
 import json
 import pytest
 import server.endpoints as ep
+from data.db_connect import connect_db, SE_DB
 
 TEST_CLIENT = ep.app.test_client()
 
@@ -10,8 +11,9 @@ def client():
 
 @pytest.fixture(autouse=True)
 def clear_cities():
-    db = ep.dc.db 
-    db.cities.delete_many({})
+    """Clear cities collection before each test."""
+    db_client = connect_db()
+    db_client[SE_DB].cities.delete_many({})
 
 def test_get_all_cities(client):
     """GET /cities should return list (even if empty)."""
