@@ -7,4 +7,4 @@ To create the env for a new developer, run `make dev_env`.
 
 
 # Project Planning
-- [Progress and Goals](ProjectAndGoals.md)
+[Progress and Goals](ProgressAndGoals.md)
