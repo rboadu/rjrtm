@@ -27,12 +27,12 @@ FEATURES
 TECH STACK
 ------------------------------------------------------------
 
-Backend: Python, Flask, Flask-RESTX
-Database: MongoDB
-Caching: In-memory cache layer
-API Docs: Swagger (Flask-RESTX)
-Testing: Pytest
-CI/CD: GitHub Actions (planned)
+Backend: Python, Flask, Flask-RESTX  
+Database: MongoDB  
+Caching: In-memory cache layer  
+API Docs: Swagger (Flask-RESTX)  
+Testing: Pytest  
+CI/CD: GitHub Actions (planned)  
 Deployment: Cloud-hosted service (planned)
 
 ------------------------------------------------------------
