@@ -1,4 +1,4 @@
-Geographic API Server
+# Geographic API Server
 
 A RESTful API server for managing geographic data including countries, states, and cities.
 The project is designed as a production-style backend system with full CRUD support,
