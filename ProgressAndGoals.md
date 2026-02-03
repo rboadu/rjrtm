@@ -1,41 +1,78 @@
 # Progress and Goals
 
-## Completed Requirement
-- Created an API server for a geographic database
-   - Requirement completed: Successfully implemented a RESTful API server to manage geographic data, including countries, states, and cities.
-   - All required endpoints are functional and integrated into the server.
-- Implemented CRUD operations for the data stored in the dataset.
-   - Requirement completed: Created backend code that handles the data collection for countries, cities, and states.
-   - Implemented Create, Read, Update, and Delete operations for all core data models.
-- Created a dozen or more endpoints
-   - Requirement completed: Endpoints have been created for each element of data stored in the dataset to perform its functionality.
-   - Endpoints are structured consistently and follow RESTful design principles.
-- Each endpoint and other functions having unit testing
-   - Requirement completed: All endpoints have been tested to ensure reliability and correctness of this project.
-- Each endpoint are documented for Swagger
-   - Requirement completed: Provided clear documentation for future understanding and client applications.
-   - Documentation includes request schemas, response formats, parameters, and HTTP status codes to support client usage.
-- When practical, data should be cached in RAM
-   -  Requirement completed: Optimize the performance for frequently accessed data.
-- Deploy the project to the cloud using CI/CD
-   - Requirement partially met: Initial deployment pipeline has been set up.
-   - Encountered challenges connecting the API server to the cloud environment.
-   - Fixes have been attempted, but additional configuration and testing are required to ensure a stable production deployment.
+## Completed Requirements
+
+#### Backend Development
+- RESTful API Server for Geographic Data
+  Successfully implemented a RESTful API server to manage geographic data, including countries, states, and cities.  
+  - All required endpoints are functional and integrated.
+  - Endpoints follow RESTful conventions and consistent URL structures.
+
+- CRUD Operations   
+  Implemented full Create, Read, Update, and Delete (CRUD) functionality for all core data models.  
+  - Each resource supports appropriate HTTP methods (GET, POST, PUT/PATCH, DELETE).
+  - Input validation and error handling are implemented to ensure data integrity.
+
+-  API Endpoints   
+  Created over a dozen endpoints to support all required data interactions.  
+  - Endpoints are designed for scalability and clarity.
+  - Each endpoint maps clearly to a specific resource and action.
+
+-  Testing and Documentation   
+  - Unit tests have been written for endpoints and supporting backend functions to ensure correctness and reliability.
+  - All endpoints are documented using Swagger, including:
+    - Request parameters
+    - Request/response schemas
+    - HTTP status codes
+  - This documentation supports both development and future client-side integration.
+
+-  In-Memory Caching   
+   - Implemented RAM-based caching where practical to optimize performance for frequently accessed data and reduce redundant database operations.
+
+#### Deployment and CI/CD
+-  Cloud Deployment (Partially Completed)   
+  An initial CI/CD pipeline has been configured to automate deployment.
+  - The API server has been prepared for cloud hosting.
+  - Some connectivity and configuration issues remain, which are currently preventing a fully stable production deployment.
+
+### Technology Stack
+-  Backend: Node.js, Express  
+-  Database: Geographic dataset(structured collections for countries, states, and cities)  
+-  API Documentation: Swagger(OpenAPI)  
+-  Testing: Unit tests for endpoints and backend logic  
+-  Deployment: Cloud hosting with CI/CD pipeline integration  
+
+### Goals for the Semester
+
+#### Overall Approach
+This semester, our approach is to first stabilize and finalize the backend infrastructure , then focus on  frontend integration and user-facing functionality. By ensuring a reliable and well-documented API, we can efficiently build a frontend that interacts smoothly with the backend and provides a clear user experience.
+
+#### Backend Goals
+-  Stabilize Cloud Deployment 
+  - Resolve remaining CI/CD configuration and connectivity issues.
+  - Achieve a stable cloud-hosted deployment of the API server.
+  - Ensure environment variables, secrets, and networking are properly configured.
+
+-  Maintain and Improve Code Quality 
+  - Expand unit test coverage to include edge cases.
+  - Refactor backend code for improved readability, modularity, and maintainability.
+  - Monitor performance and optimize caching strategies where needed.
 
 
-## Goals for Semester
-Backend Goals
-- Stabilize Cloud Development 
-    - Resolve remaining configuration and connectivity issues.
-    - Fully deploy the API server to a cloud-hosted environment.
-- Maintain Code Quality 
-    - Continue expanding unit test coverage.
-    - Refactor backend code for readability and maintainability as the project grows.
+#### Frontend Goals
+-  Frontend–API Integration 
+  - Develop a frontend or client interface that connects directly to the API.
+  - Implement features that allow users to:
+    - View lists of countries, states, and cities
+    - Retrieve detailed information for specific locations
+    - Create, update, and delete records through the UI
+  - Ensure frontend actions correctly trigger API requests and reflect real-time data changes.
 
-Frontend Goals 
-- UI–API Integration
-    - Connect a frontend or client interface to the existing API endpoints.
-    - Validate that data is accurately retrieved, displayed, and updated through the UI.
-- Usability Testing
-    - Conduct basic usability testing to identify confusing workflows or missing features.
-    - Use feedback to refine UI behavior and endpoint usage.
+-  User Interaction and Behavior 
+  - Design intuitive navigation for exploring geographic data.
+  - Provide clear feedback for user actions (loading states, success messages, error handling).
+  - Ensure forms validate input before sending requests to the API.
+
+-  Usability Testing 
+  - Conduct basic usability testing to identify confusing workflows or missing features.
+  - Iterate on UI design and API usage based on feedback to improve overall user experience.
