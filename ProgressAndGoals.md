@@ -1,80 +1,93 @@
-# Progress and Goals
+# Progress and Goals (Refined Version)
 
-## Completed Requirements
+## 1. Completed Work and Requirements Met
 
-#### Backend Development
-- RESTful API Server for Geographic Data
-  Successfully implemented a RESTful API server to manage geographic data, including countries, states, and cities.  
-  - All required endpoints are functional and integrated.
-  - Endpoints follow RESTful conventions and consistent URL structures.
+### Backend Development
 
-- CRUD Operations   
-  Implemented full Create, Read, Update, and Delete (CRUD) functionality for all core data models.  
-  - Each resource supports appropriate HTTP methods (GET, POST, PUT/PATCH, DELETE).
-  - Input validation and error handling are implemented to ensure data integrity.
-
--  API Endpoints   
-  Created over a dozen endpoints to support all required data interactions.  
-  - Endpoints are designed for scalability and clarity.
-  - Each endpoint maps clearly to a specific resource and action.
-
--  Testing and Documentation   
-  - Unit tests have been written for endpoints and supporting backend functions to ensure correctness and reliability.
-  - All endpoints are documented using Swagger, including:
-    - Request parameters
-    - Request/response schemas
-    - HTTP status codes
-  - This documentation supports both development and future client-side integration.
-
--  In-Memory Caching   
-   - Implemented RAM-based caching where practical to optimize performance for frequently accessed data and reduce redundant database operations.
-
-#### Deployment and CI/CD
--  Cloud Deployment (Partially Completed)   
-  An initial CI/CD pipeline has been configured to automate deployment.
-  - The API server has been prepared for cloud hosting.
+- **RESTful API Server for Geographic Data**
+  - Implemented a RESTful API server to manage countries, states, and cities.
+  - Requirements met: API endpoints for all core entities, RESTful conventions, scalable and clear URL structures.
+- **CRUD Operations**
+  - Full Create, Read, Update, and Delete support for all data models.
+  - Requirements met: Each resource supports GET, POST, PUT/PATCH, DELETE; input validation and error handling ensure data integrity.
+- **API Endpoints**
+  - Over a dozen endpoints created for all required data interactions.
+  - Requirements met: Endpoints map clearly to resources and actions, designed for scalability.
+- **Testing and Documentation**
+  - Unit tests for endpoints and backend logic using pytest.
+  - API documented with Swagger/OpenAPI (request parameters, schemas, status codes).
+  - Requirements met: Reliable, testable backend; comprehensive documentation for development and integration.
+- **In-Memory Caching**
+  - RAM-based caching for frequently accessed data.
+  - Requirements met: Improved performance, reduced redundant DB operations.
+- **Deployment and CI/CD**
+  - Initial CI/CD pipeline (GitHub Actions) and cloud deployment (Heroku) configured.
+  - Requirements met: Automated deployment, cloud readiness, partial production deployment.
   - Some connectivity and configuration issues remain, which are currently preventing a fully stable production deployment.
 
-### Technology Stack
--  Backend: Node.js, Express  
--  Database: Geographic dataset(structured collections for countries, states, and cities)  
--  API Documentation: Swagger(OpenAPI)  
--  Testing: Unit tests for endpoints and backend logic  
--  Deployment: Cloud hosting with CI/CD pipeline integration  
+## 2. Goals for This Semester
 
-### Goals for the Semester
+### Overall Approach
 
-#### Overall Approach
-This semester, our approach is to first stabilize and finalize the backend infrastructure.
-We plan on improving the file structure to have proper seperation of concerns. We also plan to decouple files. The endpoints will no longer be in one file and seperated. We'll look into potentially adding or revising endpoints to make sure the full backend functionality meets the needs of the frontend. After finalizing the backend, we'll focus on frontend integration and user-facing functionality. We plan to have a page for each entity, ex: country will have it's own page. We'll achieve it by splitting up the work evenly. The front-end design and functionality is likely to change and grow as we go a long the way, so we'll aim for proper communication, comprehensive documentation, and equal work division to help us achieve a user friendly frontend. 
+- **Goal:** Finalize backend, improve code structure, and deliver a user-friendly frontend.
+- **Requirement:** Stable, maintainable, and scalable application ready for user interaction and future growth.
+- **How:** Refactor the code for separation of concerns, decouple files, ensure clear communication across the team and have detailed documentation.
 
+### Backend Goals
 
-#### Backend Goals
--  Stabilize Cloud Deployment 
-  - Resolve remaining CI/CD configuration and connectivity issues.
-  - Achieve a stable cloud-hosted deployment of the API server.
-  - Ensure environment variables, secrets, and networking are properly configured.
+- **Stabilize Cloud Deployment**
+  - Requirement: Fully stable, cloud-hosted API server with secure configuration.
+  - How: Resolve CI/CD and connectivity issues, configure environment variables and secrets, monitor deployment.
+- **Maintain and Improve Code Quality**
+  - Requirement: High-quality, maintainable, and reliable backend code.
+  - How: Expand unit test coverage (edge cases, error scenarios), refactor for modularity, optimize caching.
 
--  Maintain and Improve Code Quality 
-  - Expand unit test coverage to include edge cases.
-  - Refactor backend code for improved readability, modularity, and maintainability.
-  - Monitor performance and optimize caching strategies where needed.
+### Frontend Goals
 
+- **Frontend–API Integration**
+  - Requirement: Users can interact with all core data models via the UI.
+  - How: Develop a React frontend that connects to the API, supports CRUD for countries, states, and cities, and reflects real-time data changes. Ensure all frontend actions trigger appropriate API requests and update the UI accordingly.
 
-#### Frontend Goals
--  Frontend–API Integration 
-  - Develop a frontend or client interface that connects directly to the API.
-  - Implement features that allow users to:
-    - View lists of countries, states, and cities
-    - Retrieve detailed information for specific locations
-    - Create, update, and delete records through the UI
-  - Ensure frontend actions correctly trigger API requests and reflect real-time data changes.
+- **Detailed Feature Set and User Interactions**
+  - Requirement: Comprehensive, intuitive, and accessible user experience.
+  - How:
+    - **Entity Pages:** Dedicated pages for countries, states, and cities, each with list and detail views.
+    - **CRUD Operations:**
+      - Users can add, edit, and delete countries, states, and cities through modal or inline forms.
+      - All forms include client-side validation (required fields, data types, etc.) and display clear error messages for invalid input.
+      - Success and error feedback is provided via toasts, modals, or inline messages.
+    - **Search and Filter:**
+      - Users can search and filter lists by name or other attributes.
+      - Filtered results update in real time as users type or select filters.
+    - **Navigation:**
+      - Intuitive navigation structure (sidebar, top bar, or breadcrumbs) for moving between entity pages and detail views.
+      - Support for deep linking and browser navigation (back/forward).
+    - **Loading and Data Refresh:**
+      - Loading indicators are shown during data fetches or updates.
+      - Data refreshes automatically after CRUD actions, ensuring the UI always reflects the latest state.
 
--  User Interaction and Behavior 
-  - Design intuitive navigation for exploring geographic data.
-  - Provide clear feedback for user actions (loading states, success messages, error handling).
-  - Ensure forms validate input before sending requests to the API.
+- **Usability Testing and Iteration**
+  - Requirement: User-friendly and effective UI.
+  - How: Conduct usability testing with real users or peers to identify confusing workflows or missing features. Gather feedback and iterate on UI design, navigation, and API usage to improve the overall experience.
 
--  Usability Testing 
-  - Conduct basic usability testing to identify confusing workflows or missing features.
-  - Iterate on UI design and API usage based on feedback to improve overall user experience.
+## 3. Technology Stack
+
+- **Main Language:** Python 3.9 or greater
+- **OS:** UNIX-like (MacOS, Linux, WSL, etc.)
+- **Testing:** pytest
+- **API server:** Flask and Flask-RESTX
+- **Database:** MongoDB
+- **Build:** make
+- **Lint:** flake8
+- **CI/CD:** GitHub Actions
+- **Cloud deployment:** Heroku
+- **Frontend:** React
+- **Project management:** Kanban board on GitHub
+
+---
+
+**Next Steps:**
+
+- Continue backend and deployment refinement
+- Begin frontend development and integration
+- Update this document and the README as progress is made
