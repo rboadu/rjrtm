@@ -45,7 +45,9 @@
 ### Goals for the Semester
 
 #### Overall Approach
-This semester, our approach is to first stabilize and finalize the backend infrastructure , then focus on  frontend integration and user-facing functionality. By ensuring a reliable and well-documented API, we can efficiently build a frontend that interacts smoothly with the backend and provides a clear user experience.
+This semester, our approach is to first stabilize and finalize the backend infrastructure.
+We plan on improving the file structure to have proper seperation of concerns. We also plan to decouple files. The endpoints will no longer be in one file and seperated. We'll look into potentially adding or revising endpoints to make sure the full backend functionality meets the needs of the frontend. After finalizing the backend, we'll focus on frontend integration and user-facing functionality. We plan to have a page for each entity, ex: country will have it's own page. We'll achieve it by splitting up the work evenly. The front-end design and functionality is likely to change and grow as we go a long the way, so we'll aim for proper communication, comprehensive documentation, and equal work division to help us achieve a user friendly frontend. 
+
 
 #### Backend Goals
 -  Stabilize Cloud Deployment 

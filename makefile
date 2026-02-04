@@ -18,6 +18,7 @@ all_tests: FORCE
 	PYTHONPATH=$(shell pwd) pytest -vv --cov=server server/tests
 	PYTHONPATH=$(shell pwd) pytest -vv --cov=data data/tests
 	PYTHONPATH=$(shell pwd) pytest -vv --cov=security security/tests
+	PYTHONPATH=$(shell pwd) pytest -vv --cov=examples examples/tests
 
 dev_env: FORCE
 	pip3 install -r $(REQ_DIR)/requirements-dev.txt
