@@ -158,3 +158,9 @@ Key targets:
 - make prod        -> run tests, commit, push to GitHub
 
 The Makefile is designed to integrate cleanly with CI/CD pipelines.
+
+------------------------------------------------------------
+PROGRESS AND GOALS
+------------------------------------------------------------
+
+[Link](https://github.com/rboadu/rjrtm/blob/master/ProgressAndGoals.md)
