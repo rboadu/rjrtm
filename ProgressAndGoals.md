@@ -48,6 +48,15 @@
   - Requirement: Users can interact with all core data models via the UI.
   - How: Develop a React frontend that connects to the API, supports CRUD for countries, states, and cities, and reflects real-time data changes. Ensure all frontend actions trigger appropriate API requests and update the UI accordingly.
 
+- **Interactive “Spin the Globe” Experience**
+- Requirement: Provide an engaging way for users to explore geographic data.
+  How:
+    - Implement a 3D or animated spinning globe/map interface as the primary entry point to the application.
+    - There will be a button for users to select the country, state, and city.
+    - Users can spin, zoom, and click on regions or countries on the globe.
+    - Selecting a country on the globe loads its detailed information from the API, including associated states and cities
+    - The globe view acts as both a visualization tool and a navigation mechanism into deeper data views.
+
 - **Detailed Feature Set and User Interactions**
   - Requirement: Comprehensive, intuitive, and accessible user experience.
   - How:
