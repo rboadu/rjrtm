@@ -50,31 +50,13 @@
 
 - **Interactive “Spin the Globe” Experience**
 - Requirement: Provide an engaging way for users to explore geographic data.
-  How:
+How:
     - Implement a 3D or animated spinning globe/map interface as the primary entry point to the application.
     - There will be a button for users to select the country, state, and city.
     - Users can spin, zoom, and click on regions or countries on the globe.
     - Selecting a country on the globe loads its detailed information from the API, including associated states and cities
     - The globe view acts as both a visualization tool and a navigation mechanism into deeper data views.
-
-- **Detailed Feature Set and User Interactions**
-  - Requirement: Comprehensive, intuitive, and accessible user experience.
-  - How:
-    - **Entity Pages:** Dedicated pages for countries, states, and cities, each with list and detail views.
-    - **CRUD Operations:**
-      - Users can add, edit, and delete countries, states, and cities through modal or inline forms.
-      - All forms include client-side validation (required fields, data types, etc.) and display clear error messages for invalid input.
-      - Success and error feedback is provided via toasts, modals, or inline messages.
-    - **Search and Filter:**
-      - Users can search and filter lists by name or other attributes.
-      - Filtered results update in real time as users type or select filters.
-    - **Navigation:**
-      - Intuitive navigation structure (sidebar, top bar, or breadcrumbs) for moving between entity pages and detail views.
-      - Support for deep linking and browser navigation (back/forward).
-    - **Loading and Data Refresh:**
-      - Loading indicators are shown during data fetches or updates.
-      - Data refreshes automatically after CRUD actions, ensuring the UI always reflects the latest state.
-
+   
 - **Usability Testing and Iteration**
   - Requirement: User-friendly and effective UI.
   - How: Conduct usability testing with real users or peers to identify confusing workflows or missing features. Gather feedback and iterate on UI design, navigation, and API usage to improve the overall experience.
