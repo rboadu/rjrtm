@@ -98,8 +98,8 @@ class JournalAdd(Resource):
         data = api.payload
         entry = data.get('entry')
         if not entry:
-            return {'error': 'Entry is required'}, 400
-        return {'message': 'Entry added', 'entry': entry}, 201
+            return {'error': 'Entry is required'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'Entry added', 'entry': entry}, HTTPStatus.CREATED
 
 
 # ==========================
@@ -129,7 +129,7 @@ class States(Resource):
         except Exception:
             state_copy['_id'] = returned_id
 
-        return {'message': 'State added successfully', 'state': state_copy}, 201
+        return {'message': 'State added successfully', 'state': state_copy}, HTTPStatus.CREATED
 
 
 @states_ns.route('/bulk')
@@ -137,15 +137,13 @@ class StatesBulk(Resource):
     @api.expect([state_model])
     def post(self):
         """Create multiple states in a single request.
-
-        Expects a JSON array of state documents.
         """
         payload = api.payload
         if payload is None:
-            return {'error': 'Payload required (list of state documents)'}, 400
+            return {'error': 'Payload required (list of state documents)'}, HTTPStatus.BAD_REQUEST
 
         if not isinstance(payload, list):
-            return {'error': 'Payload must be a list of state documents'}, 400
+            return {'error': 'Payload must be a list of state documents'}, HTTPStatus.BAD_REQUEST
 
         # validate basic shape
         valid_docs = []
@@ -160,15 +158,15 @@ class StatesBulk(Resource):
             valid_docs.append(item)
 
         if not valid_docs:
-            return {'error': 'No valid state documents to insert', 'details': errors}, 400
+            return {'error': 'No valid state documents to insert', 'details': errors}, HTTPStatus.BAD_REQUEST
 
         try:
             inserted_ids = ds.create_states_bulk(valid_docs)
         except Exception as e:
             logger.exception('Bulk insert failed')
-            return {'error': 'Bulk insert failed', 'details': str(e)}, 500
+            return {'error': 'Bulk insert failed', 'details': str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR
 
-        return {'created': inserted_ids, 'errors': errors}, 201
+        return {'created': inserted_ids, 'errors': errors}, HTTPStatus.CREATED
 
 
 @states_ns.route('/<string:code>')
@@ -177,8 +175,8 @@ class StateByCode(Resource):
         """Return a specific state by code."""
         state = ds.read_state_by_code(code)
         if state:
-            return api.marshal(state, state_model), 200
-        return {'error': 'State not found'}, 404
+            return api.marshal(state, state_model), HTTPStatus.OK
+        return {'error': 'State not found'}, HTTPStatus.NOT_FOUND
 
     @api.expect(state_model)
     def put(self, code):
@@ -186,26 +184,26 @@ class StateByCode(Resource):
         data = api.payload
         updated = ds.update_state(code, data)
         if updated:
-            return {'message': 'State updated', 'state': data}, 200
-        return {'error': 'State not found'}, 404
+            return {'message': 'State updated', 'state': data}, HTTPStatus.OK
+        return {'error': 'State not found'}, HTTPStatus.NOT_FOUND
 
     @api.expect(state_model)
     def patch(self, code):
         """Partially update a state by code."""
         data = api.payload or {}
         if not data:
-            return {'error': 'No update fields provided'}, 400
+            return {'error': 'No update fields provided'}, HTTPStatus.BAD_REQUEST
         updated = ds.update_state(code, data)
         if updated:
-            return {'message': 'State partially updated', 'state': data}, 200
-        return {'error': 'State not found'}, 404
+            return {'message': 'State partially updated', 'state': data}, HTTPStatus.OK
+        return {'error': 'State not found'}, HTTPStatus.NOT_FOUND
 
     def delete(self, code):
         """Delete a state by code."""
         deleted = ds.delete_state(code)
         if deleted:
-            return {'message': 'State deleted'}, 200
-        return {'error': 'State not found'}, 404
+            return {'message': 'State deleted'}, HTTPStatus.OK
+        return {'error': 'State not found'}, HTTPStatus.NOT_FOUND
 
 
 @states_ns.route('/<string:code>/patch')
@@ -214,11 +212,11 @@ class StatePatch(Resource):
     def patch(self, code):
         updates = api.payload or {}
         if not updates:
-            return {'error': 'No updates provided'}, 400
+            return {'error': 'No updates provided'}, HTTPStatus.BAD_REQUEST
         updated = ds.update_state(code, updates)
         if updated:
-            return {'message': 'State updated', 'state': updates}, 200
-        return {'error': 'State not found'}, 404
+            return {'message': 'State updated', 'state': updates}, HTTPStatus.OK
+        return {'error': 'State not found'}, HTTPStatus.NOT_FOUND
 
 
 @states_ns.route('/country/<string:country>')
@@ -228,8 +226,8 @@ class StatesByCountry(Resource):
         """Return all states for a given country."""
         states = ds.read_states_by_country(country)
         if states:
-            return states, 200
-        return {'error': f'No states found for country: {country}'}, 404
+            return states, HTTPStatus.OK
+        return {'error': f'No states found for country: {country}'}, HTTPStatus.NOT_FOUND
 
 
 # ==========================
@@ -289,8 +287,8 @@ class Cities(Resource):
             'sort_order': 'Sort order: asc | desc'
         },
         responses={
-            200: "List of cities",
-            400: ("Invalid query parameter", error_model)
+            HTTPStatus.OK: "List of cities",
+            HTTPStatus.BAD_REQUEST: ("Invalid query parameter", error_model)
         }
     )
     def get(self):
@@ -348,87 +346,87 @@ class Cities(Resource):
 @cities_ns.route('/<string:name>/<string:country>')
 class CityByNameAndCountry(Resource):
 
-    @api.response(200, 'City retrieved successfully', city_model)
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City retrieved successfully', city_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def get(self, name, country):
         """Get a specific city by name and country."""
         city = dc.get_city_by_name_and_country(name, country)
         if city:
-            return city, 200
-        return {'error': 'City not found'}, 404
+            return city, HTTPStatus.OK
+        return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
     @api.expect(city_model)
-    @api.response(200, 'City updated successfully')
-    @api.response(400, 'Invalid update payload', error_model)
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City updated successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid update payload', error_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def put(self, name, country):
         """Update a city with validation."""
         updates = api.payload or {}
 
         msg, ok = validate_city_payload(updates, partial=False)
         if not ok:
-            return {"error": msg}, 400
+            return {"error": msg}, HTTPStatus.BAD_REQUEST
 
         if dc.update_city(name, country, updates):
-            return {'message': 'City updated'}, 200
-        return {'error': 'City not found'}, 404
+            return {'message': 'City updated'}, HTTPStatus.OK
+        return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
-    @api.response(200, 'City deleted successfully')
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City deleted successfully')
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def delete(self, name, country):
         """Delete a specific city by name and country."""
         if dc.delete_city(name, country):
-            return {'message': 'City deleted'}, 200
-        return {'error': 'City not found'}, 404
+            return {'message': 'City deleted'}, HTTPStatus.OK
+        return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
 
 @cities_ns.route('/<string:name>')
 class CityByName(Resource):
     """Operations on a city by name only (uses first match)."""
 
-    @api.response(200, 'City retrieved successfully', city_model)
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City retrieved successfully', city_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def get(self, name):
         """Get a specific city by name (first match)."""
         city = dc.get_city_by_name(name)
         if not city:
-            return {'error': 'City not found'}, 404
-        return city, 200
+            return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
+        return city, HTTPStatus.OK
 
     @api.expect(city_model)
-    @api.response(200, 'City updated successfully')
-    @api.response(400, 'Invalid update payload', error_model)
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City updated successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid update payload', error_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def put(self, name):
         """Update a city by name (uses first matching city to determine country)."""
         updates = api.payload or {}
 
         msg, ok = validate_city_payload(updates, partial=True)
         if not ok:
-            return {"error": msg}, 400
+            return {"error": msg}, HTTPStatus.BAD_REQUEST
 
         city = dc.get_city_by_name(name)
         if not city:
-            return {'error': 'City not found'}, 404
+            return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
         country = city.get('country')
         if not dc.update_city(name, country, updates):
-            return {'error': 'City not found'}, 404
+            return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
-        return {'message': 'City updated'}, 200
+        return {'message': 'City updated'}, HTTPStatus.OK
 
-    @api.response(200, 'City deleted successfully')
-    @api.response(404, 'City not found', error_model)
+    @api.response(HTTPStatus.OK, 'City deleted successfully')
+    @api.response(HTTPStatus.NOT_FOUND, 'City not found', error_model)
     def delete(self, name):
         """Delete a specific city by name (uses first match to determine country)."""
         city = dc.get_city_by_name(name)
         if not city:
-            return {'error': 'City not found'}, 404
+            return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
         country = city.get('country')
         if not dc.delete_city(name, country):
-            return {'error': 'City not found'}, 404
+            return {'error': 'City not found'}, HTTPStatus.NOT_FOUND
 
-        return {'message': 'City deleted'}, 200
+        return {'message': 'City deleted'}, HTTPStatus.OK
 
 
 @cities_ns.route('/bulk')
@@ -436,15 +434,15 @@ class CitiesBulk(Resource):
     """Bulk operations for cities."""
 
     @api.expect([city_model])
-    @api.response(201, 'Cities created successfully')
-    @api.response(400, 'Invalid payload', error_model)
-    @api.response(409, 'No cities created', error_model)
+    @api.response(HTTPStatus.CREATED, 'Cities created successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid payload', error_model)
+    @api.response(HTTPStatus.CONFLICT, 'No cities created', error_model)
     def post(self):
         """Create multiple cities in one request."""
         payload = api.payload
 
         if not isinstance(payload, list):
-            return {'error': 'Payload must be a list of city objects'}, 400
+            return {'error': 'Payload must be a list of city objects'}, HTTPStatus.BAD_REQUEST
 
         created = []
         errors = []
@@ -462,13 +460,13 @@ class CitiesBulk(Resource):
                 errors.append(f'Item {idx}: {str(e)}')
 
         if not created:
-            return {'error': 'No cities created', 'details': errors}, 409
+            return {'error': 'No cities created', 'details': errors}, HTTPStatus.CONFLICT
 
         return {
             'message': 'Bulk city creation complete',
             'created': created,
             'errors': errors
-        }, 201
+        }, HTTPStatus.CREATED
     
 
 # ==========================
@@ -485,8 +483,8 @@ class CountriesList(Resource):
     
     @api.marshal_list_with(country_model, mask=None)
     @api.doc(description="Retrieve all countries from the database")
-    @api.response(200, 'List of countries')
-    @api.response(500, 'Database error', error_model)
+    @api.response(HTTPStatus.OK, 'List of countries')
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Database error', error_model)
     def get(self):
         """Get all countries."""
         try:
@@ -495,16 +493,16 @@ class CountriesList(Resource):
             return countries
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
-            abort(500, f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
         except Exception as e:
             logger.error(f"Error retrieving countries: {e}")
-            abort(500, str(e))
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
     @api.expect(country_model)
-    @api.response(201, 'Country added successfully')
-    @api.response(400, 'Invalid payload', error_model)
-    @api.response(409, 'Country already exists', error_model)
-    @api.response(500, 'Database error', error_model)
+    @api.response(HTTPStatus.CREATED, 'Country added successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid payload', error_model)
+    @api.response(HTTPStatus.CONFLICT, 'Country already exists', error_model)
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Database error', error_model)
     def post(self):
         """Create a new country."""
         try:
@@ -513,11 +511,11 @@ class CountriesList(Resource):
 
             # Validate fields
             if "code" not in country or "name" not in country:
-                return {"error": "Both 'code' and 'name' are required"}, 400
+                return {"error": "Both 'code' and 'name' are required"}, HTTPStatus.BAD_REQUEST
 
             code = country.get("code")
             if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
-                return {"error": "Invalid country code format"}, 400
+                return {"error": "Invalid country code format"}, HTTPStatus.BAD_REQUEST
 
             # Try to create
             new_id = create_country(country)
@@ -525,15 +523,15 @@ class CountriesList(Resource):
             return {
                 "message": "Country created successfully",
                 "country": {**country, "_id": str(new_id)}
-            }, 201
+            }, HTTPStatus.CREATED
 
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
-            abort(500, f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
 
         except Exception as e:
             logger.error(f"Unexpected error creating country: {e}")
-            abort(500, str(e))
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
 
 @countries_ns.route('/<string:code>')
@@ -542,16 +540,16 @@ class CountryByCode(Resource):
     
     @api.marshal_with(country_model, mask=None)
     @api.doc(description="Retrieve a specific country by its code")
-    @api.response(200, 'Country retrieved successfully')
-    @api.response(400, 'Invalid country code format', error_model)
-    @api.response(404, 'Country not found', error_model)
-    @api.response(500, 'Database error', error_model)
+    @api.response(HTTPStatus.OK, 'Country retrieved successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid country code format', error_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'Country not found', error_model)
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Database error', error_model)
     def get(self, code: str):
         """Get a country by code."""
         try:
             if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
                 logger.warning(f"Invalid country code format: '{code}'")
-                abort(400, f"Invalid country code format: {code}")
+                abort(HTTPStatus.BAD_REQUEST, f"Invalid country code format: {code}")
 
             logger.info(f"Request to '/countries/{code}'")
             country = read_country_by_code(code)
@@ -560,16 +558,16 @@ class CountryByCode(Resource):
                 return country
             else:
                 logger.warning(f"Country with code '{code}' not found")
-                abort(404, f"Country with code '{code}' not found")
+                abort(HTTPStatus.NOT_FOUND, f"Country with code '{code}' not found")
 
         except HTTPException:
             raise
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
-            abort(500, f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
         except Exception as e:
             logger.error(f"Error retrieving country: {e}")
-            abort(500, str(e))
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
 
 @countries_ns.route('/search')
@@ -581,15 +579,15 @@ class CountrySearch(Resource):
         description="Search for countries by name (case-insensitive partial match)",
         params={'q': {'description': 'Search query string', 'type': 'string', 'required': True}}
     )
-    @api.response(200, 'Search results')
-    @api.response(400, 'Missing search query', error_model)
-    @api.response(500, 'Database error', error_model)
+    @api.response(HTTPStatus.OK, 'Search results')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Missing search query', error_model)
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Database error', error_model)
     def get(self):
         """Search countries by name."""
         try:
             query = request.args.get('q', '').strip()
             if not query:
-                abort(400, "Search query parameter 'q' is required")
+                abort(HTTPStatus.BAD_REQUEST, "Search query parameter 'q' is required")
 
             logger.info(f"Search request for: '{query}'")
             countries = search_countries_by_name(query)
@@ -600,10 +598,10 @@ class CountrySearch(Resource):
             raise
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
-            abort(500, f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
         except Exception as e:
             logger.error(f"Error searching countries: {e}")
-            abort(500, str(e))
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
 
 @countries_ns.route('/delete/<string:code>')
@@ -611,32 +609,32 @@ class CountryDelete(Resource):
     """Delete a specific country"""
     
     @api.doc(description="Delete a country by its code")
-    @api.response(200, 'Country deleted successfully')
-    @api.response(400, 'Invalid country code format', error_model)
-    @api.response(404, 'Country not found', error_model)
-    @api.response(500, 'Database error', error_model)
+    @api.response(HTTPStatus.OK, 'Country deleted successfully')
+    @api.response(HTTPStatus.BAD_REQUEST, 'Invalid country code format', error_model)
+    @api.response(HTTPStatus.NOT_FOUND, 'Country not found', error_model)
+    @api.response(HTTPStatus.INTERNAL_SERVER_ERROR, 'Database error', error_model)
     def delete(self, code: str):
         """Delete a country by code."""
         try:
             if not code.isalpha() or len(code) not in (2, 3) or not code.isupper():
                 logger.warning(f"Invalid country code format: '{code}'")
-                abort(400, f"Invalid country code format: {code}")
+                abort(HTTPStatus.BAD_REQUEST, f"Invalid country code format: {code}")
 
             logger.info(f"Request to delete country: '{code}'")
             
             deleted_count = delete_country_by_code(code)
 
             if deleted_count > 0:
-                return {'message': f"Country '{code}' deleted successfully"}, 200
+                return {'message': f"Country '{code}' deleted successfully"}, HTTPStatus.OK
             else:
                 logger.warning(f"Country with code '{code}' not found")
-                abort(404, f"Country with code '{code}' not found")
+                abort(HTTPStatus.NOT_FOUND, f"Country with code '{code}' not found")
 
         except HTTPException:
             raise
         except PyMongoError as e:
             logger.error(f"Database error: {e}")
-            abort(500, f"Database error: {e}")
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, f"Database error: {e}")
         except Exception as e:
             logger.error(f"Error deleting country: {e}")
-            abort(500, str(e))
+            abort(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
