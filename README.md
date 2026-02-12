@@ -95,7 +95,6 @@ Cities:
 - PUT    /cities/{name}/{country}
 - DELETE /cities/{name}/{country}
 - GET    /cities/{name}
-- GET    /cities/ (with query params: country, name, min_population, max_population, limit, offset, sort_by, sort_order)
 
 ------------------------------------------------------------
 SWAGGER DOCUMENTATION
