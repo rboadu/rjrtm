@@ -12,7 +12,6 @@ def get_all_cities():
     cached = cache.get('cities:all')
     if cached is not None:
         return cached
-    
     dbc.connect_db()
     cities = list(dbc.client[dbc.SE_DB][CITIES_COLL].find())
     for city in cities:
@@ -43,28 +42,20 @@ def get_city_by_name_and_country(name, country):
 def add_city(city):
     """
     Add a new city document.
-
-    Raises:
-        ValueError: if city already exists (same name + country)
     """
     dbc.connect_db()
     name = city.get("name")
     country = city.get("country")
-
     if not name or not country:
         raise ValueError("City must include name and country")
 
-    # DUPLICATE CHECK
     existing = dbc.client[dbc.SE_DB][CITIES_COLL].find_one({"name": name, "country": country})
     if existing:
         raise ValueError("City already exists")
 
     # Insert
     dbc.client[dbc.SE_DB][CITIES_COLL].insert_one(city)
-    
-    # Invalidate cache
     cache.invalidate('cities:all')
-
     # Re-fetch so _id is converted properly
     saved = get_city_by_name_and_country(name, country)
     return saved
@@ -74,16 +65,13 @@ def update_city(name, country, updates):
     """Update a city by name and country."""
     if not updates:
         return False
-
     dbc.connect_db()
     result = dbc.client[dbc.SE_DB][CITIES_COLL].update_one(
         {"name": name, "country": country},
         {"$set": updates}
     )
-    
     if result.matched_count > 0:
         cache.invalidate('cities:all')
-    
     return result.matched_count > 0
 
 
@@ -91,8 +79,6 @@ def delete_city(name, country):
     """Delete a city by name and country."""
     dbc.connect_db()
     result = dbc.client[dbc.SE_DB][CITIES_COLL].delete_one({"name": name, "country": country})
-    
     if result.deleted_count > 0:
         cache.invalidate('cities:all')
-    
     return result.deleted_count > 0
