@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, abort
 from flask_restx import Resource, Api, fields
 from flask_cors import CORS
+from http import HTTPStatus
 import data.states as ds
 import data.cities as dc
 from werkzeug.exceptions import HTTPException
@@ -383,15 +384,16 @@ class CityByNameAndCountry(Resource):
 
 @cities_ns.route('/<string:name>')
 class CityByName(Resource):
+    """Operations on a city by name only (uses first match)."""
 
     @api.response(200, 'City retrieved successfully', city_model)
     @api.response(404, 'City not found', error_model)
     def get(self, name):
         """Get a specific city by name (first match)."""
         city = dc.get_city_by_name(name)
-        if city:
-            return city, 200
-        return {'error': 'City not found'}, 404
+        if not city:
+            return {'error': 'City not found'}, 404
+        return city, 200
 
     @api.expect(city_model)
     @api.response(200, 'City updated successfully')
@@ -410,10 +412,10 @@ class CityByName(Resource):
             return {'error': 'City not found'}, 404
 
         country = city.get('country')
-        if dc.update_city(name, country, updates):
-            return {'message': 'City updated'}, 200
+        if not dc.update_city(name, country, updates):
+            return {'error': 'City not found'}, 404
 
-        return {'error': 'City not found'}, 404
+        return {'message': 'City updated'}, 200
 
     @api.response(200, 'City deleted successfully')
     @api.response(404, 'City not found', error_model)
@@ -423,12 +425,15 @@ class CityByName(Resource):
         if not city:
             return {'error': 'City not found'}, 404
         country = city.get('country')
-        if dc.delete_city(name, country):
-            return {'message': 'City deleted'}, 200
-        return {'error': 'City not found'}, 404
-    
+        if not dc.delete_city(name, country):
+            return {'error': 'City not found'}, 404
+
+        return {'message': 'City deleted'}, 200
+
+
 @cities_ns.route('/bulk')
 class CitiesBulk(Resource):
+    """Bulk operations for cities."""
 
     @api.expect([city_model])
     @api.response(201, 'Cities created successfully')
@@ -457,17 +462,13 @@ class CitiesBulk(Resource):
                 errors.append(f'Item {idx}: {str(e)}')
 
         if not created:
-            return {
-                'error': 'No cities created',
-                'details': errors
-            }, 409
+            return {'error': 'No cities created', 'details': errors}, 409
 
         return {
             'message': 'Bulk city creation complete',
             'created': created,
             'errors': errors
         }, 201
-
     
 
 # ==========================
