@@ -26,6 +26,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@app.errorhandler(HTTPException)
+def handle_http_exception(exc):
+    """Return JSON responses for Flask/Werkzeug HTTP errors."""
+    logger.warning('HTTP error: %s', exc)
+    return jsonify({'error': exc.description, 'status_code': exc.code}), exc.code
+
+
+@app.errorhandler(PyMongoError)
+def handle_pymongo_error(exc):
+    """Gracefully handle PyMongo errors with a JSON payload."""
+    logger.error('Database error', exc_info=exc)
+    return jsonify({'error': 'Database operation failed'}), 500
+
+
+@app.errorhandler(Exception)
+def handle_generic_exception(exc):
+    """Catch-all handler to avoid leaking stack traces to clients."""
+    logger.exception('Unhandled exception')
+    return jsonify({'error': 'Internal server error'}), 500
+
+
 # ==========================
 # Models
 # ==========================
