@@ -6,6 +6,12 @@ import os
 
 import pymongo as pm
 
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 LOCAL = "0"
 CLOUD = "1"
 

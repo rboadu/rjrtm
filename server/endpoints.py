@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Models
 # ==========================
 
-# add country
+# State model
 state_model = api.model('State', {
     'code': fields.String(required=True, description='State code, e.g. NY'),
     'name': fields.String(required=True, description='State name, e.g. New York'),
@@ -38,28 +38,31 @@ state_model = api.model('State', {
 
 })
 
-# add the state
+# City Model
 city_model = api.model('City', {
     'name': fields.String(required=True, description='City name'),
     'country': fields.String(required=True, description='Country where the city is located'),
     'population': fields.Integer(description='Population of the city')
 })
 
-
+# Country model
 country_model = api.model('Country', {
     'code': fields.String(required=True, description='ISO country code (2 or 3 letters)'),
     'name': fields.String(required=True, description='Country name')
 })
 
+# Error response model
 error_model = api.model('ErrorResponse', {
     'error': fields.String(description='Error message')
 })
 
+# Created City Model
 city_created_model = api.model('CityCreatedResponse', {
     'message': fields.String(example='City added successfully'),
     'city': fields.Nested(city_model)
 })
 
+# Journey Entry Model
 journal_model = api.model('JournalEntry', {
     'entry': fields.String(required=True, description='Journal entry text')
 })
@@ -520,7 +523,7 @@ class CountriesList(Resource):
 
             # Try to create
             new_id = create_country(country)
-
+            logging.info(f'Succesffuly created country: {new_id}')
             return {
                 "message": "Country created successfully",
                 "country": {**country, "_id": str(new_id)}
