@@ -66,32 +66,36 @@ API ENDPOINTS (HIGH-LEVEL)
 General:
 - GET  /hello
 - GET  /endpoints
+- GET  /journal
+- POST /journal/add
 
 Countries:
 - GET    /countries/
 - POST   /countries/
 - GET    /countries/{code}
-- DELETE /countries/{code}
 - GET    /countries/search?q=
+- DELETE /countries/delete/{code}
 
 States:
-- GET    /states
-- POST   /states
+- GET    /states/
+- POST   /states/
 - POST   /states/bulk
 - GET    /states/{code}
 - PUT    /states/{code}
 - PATCH  /states/{code}
+- PATCH  /states/{code}/patch
 - DELETE /states/{code}
 - GET    /states/country/{country}
 
 Cities:
-- GET    /cities
-- POST   /cities
+- GET    /cities/
+- POST   /cities/
 - POST   /cities/bulk
 - GET    /cities/{name}/{country}
 - PUT    /cities/{name}/{country}
 - DELETE /cities/{name}/{country}
 - GET    /cities/{name}
+- GET    /cities/ (with query params: country, name, min_population, max_population, limit, offset, sort_by, sort_order)
 
 ------------------------------------------------------------
 SWAGGER DOCUMENTATION
