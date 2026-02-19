@@ -1,9 +1,11 @@
 # server/util/crud.py
 
+from typing import Any, Dict, List, Optional
+
 from server.util.errors import NotFoundError, AlreadyExistsError
 
 
-def find_one(items, key, value):
+def find_one(items: List[Dict[str, Any]], key: str, value: Any) -> Optional[Dict[str, Any]]:
     """
     Return the first item in `items` where item[key] == value.
     """
@@ -13,7 +15,7 @@ def find_one(items, key, value):
     return None
 
 
-def get_or_404(items, key, value):
+def get_or_404(items: List[Dict[str, Any]], key: str, value: Any) -> Dict[str, Any]:
     """
     Return the item if it exists, otherwise raise NotFoundError.
     """
@@ -23,7 +25,7 @@ def get_or_404(items, key, value):
     return item
 
 
-def ensure_unique(items, key, value):
+def ensure_unique(items: List[Dict[str, Any]], key: str, value: Any) -> None:
     """
     Raise AlreadyExistsError if an item with key=value already exists.
     """
@@ -31,7 +33,7 @@ def ensure_unique(items, key, value):
         raise AlreadyExistsError(f"{key}={value} already exists")
 
 
-def create_item(items, data, unique_key):
+def create_item(items: List[Dict[str, Any]], data: Dict[str, Any], unique_key: str) -> Dict[str, Any]:
     """
     Create a new item, enforcing uniqueness on unique_key.
     """
@@ -40,7 +42,7 @@ def create_item(items, data, unique_key):
     return data
 
 
-def update_item(items, key, value, updates):
+def update_item(items: List[Dict[str, Any]], key: str, value: Any, updates: Dict[str, Any]) -> Dict[str, Any]:
     """
     Modify fields for an item. Raises NotFoundError if missing.
     """
@@ -49,7 +51,7 @@ def update_item(items, key, value, updates):
     return item
 
 
-def delete_item(items, key, value):
+def delete_item(items: List[Dict[str, Any]], key: str, value: Any) -> bool:
     """
     Delete an item. Raises NotFoundError if not found.
     """
