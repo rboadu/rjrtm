@@ -7,7 +7,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
-DB_NAME = os.getenv("RJR_TM_DB", "rjrtm")
+# Set all database names
+DB_NAME = os.getenv("DB_NAME", "rjrtm")
 
 SAMPLE_COUNTRIES = [
     {"code": "US", "name": "United States"},
