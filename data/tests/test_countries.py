@@ -8,7 +8,16 @@ class FakeCollection(list):
 
     def find_one(self, filt):
         for doc in self:
-            if doc.get("name") == filt.get("name"):
+            for key, val in filt.items():
+                if isinstance(val, dict) and "$regex" in val:
+                    import re
+                    pattern = re.compile(val["$regex"], re.IGNORECASE if val.get("$options") == "i" else 0)
+                    if not pattern.fullmatch(doc.get(key, "")):
+                        break
+                else:
+                    if doc.get(key) != val:
+                        break
+            else:
                 return doc
         return None
 
