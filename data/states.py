@@ -1,94 +1,108 @@
 """
 Data access layer for the 'states' collection in MongoDB.
 """
-
 import data.db_connect as dbc
 import data.cache as cache
+from data.countries import read_country_by_name
 
 STATES_COLL = "states"
+
 
 def create_state(doc: dict):
     """
     Creates a new state document in MongoDB.
-    """ 
-
+    Ensures referenced country exists by name.
+    State code must be letters only (e.g. NY, CA).
+    """
     dbc.connect_db()
+
+    country_name = doc.get("country")
+    if not country_name:
+        raise ValueError("State must include a country name")
+
+    country = read_country_by_name(country_name)
+    if not country:
+        raise ValueError(f"Country '{country_name}' does not exist")
+
+    code = doc.get("code", "")
+    if not code.isalpha():
+        raise ValueError("State code must contain letters only (e.g. NY, CA)")
+
     res = dbc.client[dbc.SE_DB][STATES_COLL].insert_one(doc).inserted_id
-    # invalidate cached states list
     cache.invalidate('states:all')
     return res
 
 
 def read_state_by_code(code: str):
-    """
-    Reads a state document by its code.
-    """
     dbc.connect_db()
     return dbc.client[dbc.SE_DB][STATES_COLL].find_one({"code": code})
 
 
 def read_all_states():
-    """
-    Reads all of the state documents from MongoDB.
-    """
-    # Try cache first
     cached = cache.get('states:all')
     if cached is not None:
         return cached
     dbc.connect_db()
     docs = list(dbc.client[dbc.SE_DB][STATES_COLL].find())
+    for d in docs:
+        from data.db_connect import convert_mongo_id
+        convert_mongo_id(d)
     cache.set('states:all', docs)
     return docs
 
+
 def update_state(code: str, update_all_fields: dict):
-    """
-    Updates a state document by its code.
-    """
     dbc.connect_db()
     result = dbc.client[dbc.SE_DB][STATES_COLL].update_one(
         {"code": code},
         {"$set": update_all_fields}
     )
-    # invalidate cache on update
     cache.invalidate('states:all')
     return result.modified_count
 
+
 def delete_state(code: str):
     """
-    Deletes a state document by its code.
+    Deletes state AND cascades delete to cities belonging to it.
     """
+    from data.cities import delete_cities_by_state
     dbc.connect_db()
+    delete_cities_by_state(code)
     result = dbc.client[dbc.SE_DB][STATES_COLL].delete_one({"code": code})
-    # invalidate cache on delete
     cache.invalidate('states:all')
     return result.deleted_count
 
 
 def create_states_bulk(docs: list):
     """
-    Insert multiple state documents in one operation.
-
-    Returns a list of inserted id strings.
+    Insert multiple states with validation.
     """
     if not isinstance(docs, list):
         raise TypeError("docs must be a list of dicts")
 
-    # ensure all items are dict-like
-    valid_docs = [d for d in docs if isinstance(d, dict)]
+    valid_docs = []
+    for d in docs:
+        if not isinstance(d, dict):
+            continue
+        country_name = d.get("country")
+        if not country_name:
+            continue
+        if not read_country_by_name(country_name):
+            continue
+        code = d.get("code", "")
+        if not code.isalpha():
+            continue
+        valid_docs.append(d)
+
     if not valid_docs:
         return []
 
     dbc.connect_db()
     res = dbc.client[dbc.SE_DB][STATES_COLL].insert_many(valid_docs)
-    # invalidate cached states list once after bulk insert
     cache.invalidate('states:all')
-    # return stringified ids for readability
     return [str(i) for i in res.inserted_ids]
 
 
 def read_states_by_country(country: str):
-    """
-    Reads all state documents for a given country.
-    """
     dbc.connect_db()
     return list(dbc.client[dbc.SE_DB][STATES_COLL].find({"country": country}))
