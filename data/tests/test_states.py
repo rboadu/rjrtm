@@ -1,5 +1,6 @@
 import data.states as ds
 
+
 class FakeCollection(list):
     def insert_one(self, doc):
         self.append(doc)
@@ -14,7 +15,6 @@ class FakeCollection(list):
     def find(self, filt=None):
         if filt is None:
             return self
-        # Filter by country if provided
         return [doc for doc in self if doc.get("country") == filt.get("country")]
 
 
@@ -29,8 +29,9 @@ def test_create_and_read(monkeypatch):
     fake_client = FakeClient()
     monkeypatch.setattr(ds.dbc, "client", fake_client)
     monkeypatch.setattr(ds.dbc, "connect_db", lambda: None)
+    monkeypatch.setattr(ds, "read_country_by_name", lambda name: {"name": name})
 
-    state = {"code": "NY", "name": "New York"}
+    state = {"code": "NY", "name": "New York", "country": "USA"}
     _id = ds.create_state(state)
     assert _id == 1
 
@@ -46,8 +47,8 @@ def test_read_states_by_country(monkeypatch):
     fake_client = FakeClient()
     monkeypatch.setattr(ds.dbc, "client", fake_client)
     monkeypatch.setattr(ds.dbc, "connect_db", lambda: None)
+    monkeypatch.setattr(ds, "read_country_by_name", lambda name: {"name": name})
 
-    # Create multiple states for different countries
     states = [
         {"code": "TX", "name": "Texas", "country": "USA"},
         {"code": "CA", "name": "California", "country": "USA"},
@@ -56,7 +57,6 @@ def test_read_states_by_country(monkeypatch):
     for state in states:
         ds.create_state(state)
 
-    # Test reading states by country
     usa_states = ds.read_states_by_country("USA")
     assert len(usa_states) == 2
     assert usa_states[0]["code"] == "TX"
@@ -66,6 +66,5 @@ def test_read_states_by_country(monkeypatch):
     assert len(canada_states) == 1
     assert canada_states[0]["code"] == "ON"
 
-    # Test non-existent country
     other_states = ds.read_states_by_country("NONEXISTENT")
     assert len(other_states) == 0

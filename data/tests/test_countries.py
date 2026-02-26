@@ -1,5 +1,6 @@
 import data.countries as dc
 
+
 class FakeCollection(list):
     def insert_one(self, doc):
         self.append(doc)
@@ -7,7 +8,7 @@ class FakeCollection(list):
 
     def find_one(self, filt):
         for doc in self:
-            if doc.get("code") == filt.get("code"):
+            if doc.get("name") == filt.get("name"):
                 return doc
         return None
 
@@ -31,7 +32,7 @@ def test_create_and_read(monkeypatch):
     _id = dc.create_country(country)
     assert _id == 1
 
-    rec = dc.read_country_by_code("US")
+    rec = dc.read_country_by_name("United States")
     assert rec["name"] == "United States"
 
     all_countries = dc.read_all_countries()
