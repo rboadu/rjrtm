@@ -1,4 +1,3 @@
-import json
 import pytest
 from unittest.mock import patch
 
@@ -22,12 +21,11 @@ def test_post_state_with_country_calls_create(client):
 def test_get_state_includes_country_when_present(client, monkeypatch):
     expected = {"code": "FL", "name": "Florida", "country": "USA"}
 
-    def fake_read(code):
-        assert code == expected['code']
+    def fake_read(code, country): 
         return expected
 
-    monkeypatch.setattr(ds, 'read_state_by_code', fake_read)
-    resp = client.get(f"/states/{expected['code']}")
+    monkeypatch.setattr(ds, 'read_state_by_code_and_country', fake_read)  
+    resp = client.get("/states/USA/FL")  
     assert resp.status_code == 200
     body = resp.get_json()
     assert body.get('code') == expected['code']

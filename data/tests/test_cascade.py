@@ -12,6 +12,7 @@ class FakeDeleteResult:
 
 class FakeCollection(list):
     def insert_one(self, doc):
+        doc.setdefault("_id", len(self) + 1)
         self.append(doc)
         return type("FakeResult", (), {"inserted_id": len(self)})()
 
@@ -66,6 +67,13 @@ def make_fake_client():
     return {dbc.SE_DB: fake_db}
 
 
+def _patch_cache(monkeypatch, *modules):
+    for mod in modules:
+        monkeypatch.setattr(mod.cache, "get", lambda key: None)
+        monkeypatch.setattr(mod.cache, "set", lambda key, val: None)
+        monkeypatch.setattr(mod.cache, "invalidate", lambda key: None)
+
+
 def test_delete_state_cascades_cities(monkeypatch):
     fake_client = make_fake_client()
 
@@ -74,8 +82,8 @@ def test_delete_state_cascades_cities(monkeypatch):
     monkeypatch.setattr(city_module.dbc, "client", fake_client)
     monkeypatch.setattr(city_module.dbc, "connect_db", lambda: None)
     monkeypatch.setattr(ds, "read_country_by_name", lambda name: {"name": name})
+    _patch_cache(monkeypatch, ds, city_module)
 
-    # create a state and two cities linked to it
     ds.create_state({"code": "NY", "name": "New York", "country": "USA"})
     fake_client[dbc.SE_DB][city_module.CITIES_COLL].insert_one(
         {"name": "New York City", "country": "USA", "state": "NY"}
@@ -86,9 +94,9 @@ def test_delete_state_cascades_cities(monkeypatch):
 
     assert len(fake_client[dbc.SE_DB][city_module.CITIES_COLL]) == 2
 
-    ds.delete_state("NY")
+    ds.delete_state("NY", "USA")  # ← fixed signature
 
-    assert ds.read_state_by_code("NY") is None
+    assert ds.read_state_by_code_and_country("NY", "USA") is None  # ← fixed function name
     assert len(fake_client[dbc.SE_DB][city_module.CITIES_COLL]) == 0
 
 
@@ -102,9 +110,9 @@ def test_delete_country_cascades_states(monkeypatch):
     monkeypatch.setattr(city_module.dbc, "client", fake_client)
     monkeypatch.setattr(city_module.dbc, "connect_db", lambda: None)
     monkeypatch.setattr(ds, "read_country_by_name", lambda name: {"name": name})
+    _patch_cache(monkeypatch, dc, ds, city_module)
 
-    # create country and two states
-    dc.create_country({"code": "US", "name": "USA"})
+    dc.create_country({"name": "USA"})
     ds.create_state({"code": "NY", "name": "New York", "country": "USA"})
     ds.create_state({"code": "CA", "name": "California", "country": "USA"})
 
