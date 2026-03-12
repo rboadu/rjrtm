@@ -6,8 +6,15 @@ import data.cache as cache
 from data.db_connect import convert_mongo_id
 from data.countries import read_country_by_name
 from data.states import read_state_by_code_and_country
+import requests
 
 CITIES_COLL = "cities"
+COUNTRY_ALIASES = {
+    "USA": "United States",
+    "US": "United States",
+    "UK": "United Kingdom",
+    "UAE": "United Arab Emirates"
+}
 
 
 def get_all_cities():
@@ -30,6 +37,38 @@ def get_city_by_name_and_country(name, country):
     if city:
         convert_mongo_id(city)
     return city
+
+def geocode_city(name, state, country):
+    """
+    Use OpenStreetMap Nominatim to get lat/lng for a city.
+    """
+    country = COUNTRY_ALIASES.get(country, country)
+    query = f"{name}, {state}, {country}"
+    url = "https://nominatim.openstreetmap.org/search"
+
+    params = {
+        "q": query,
+        "format": "json",
+        "limit": 1
+    }
+
+    headers = {
+        "User-Agent": "geo-project"
+    }
+
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        data = response.json()
+
+        if data:
+            lat = float(data[0]["lat"])
+            lng = float(data[0]["lon"])
+            return lat, lng
+
+    except Exception as e:
+        print("Geocoding error:", e)
+
+    return None, None
 
 def add_city(city):
     """
@@ -62,6 +101,11 @@ def add_city(city):
     })
     if existing:
         raise ValueError(f"City '{name}' in '{state_code}, {country_name}' already exists")
+    
+    lat, lng = geocode_city(name, state_code, country_name)
+    if lat is not None and lng is not None:
+        city["lat"] = lat
+        city["lng"] = lng
 
     # Insert city
     dbc.client[dbc.SE_DB][CITIES_COLL].insert_one(city)
