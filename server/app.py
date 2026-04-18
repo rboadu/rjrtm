@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 # Root endpoint for health check
 @app.route('/')
-def root():
+def health_check():
     logger.info("Successful request to '/'")
     return {'status': 'ok', 'service': 'rjrtm-api', 'version': '0.1'}
 
