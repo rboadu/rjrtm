@@ -13,7 +13,8 @@ from data.countries import (
     read_country_by_name,
     search_countries_by_name,
     create_country,
-    delete_country_by_name
+    delete_country_by_name,
+    update_country_by_name,
 )
 
 CORS(app)
@@ -40,7 +41,13 @@ city_model = api.model('City', {
 })
 
 country_model = api.model('Country', {
-    'name': fields.String(required=True)
+    'name': fields.String(required=True),
+    'password': fields.String(required=False),
+})
+
+country_update_model = api.model('CountryUpdate', {
+    'name': fields.String(required=False),
+    'password': fields.String(required=False),
 })
 
 error_model = api.model('ErrorResponse', {
@@ -64,7 +71,7 @@ class States(Resource):
     def post(self):
         data = api.payload
         try:
-            inserted_id = ds.create_state(data)
+            ds.create_state(data)
             return {
                 "message": "State created",
                 "state": data
@@ -214,14 +221,42 @@ class Countries(Resource):
     @api.expect(country_model)
     def post(self):
         try:
-            country = api.payload
-            new_id = create_country(country)
+            country = dict(api.payload or {})
+            create_country(country)
+            response_country = dict(country)
+            response_country.pop('password', None)
             return {
                 "message": "Country created",
-                "country": country
+                "country": response_country
             }, 201
         except ValueError as e:
             return {"error": str(e)}, 409
+
+    @api.expect(country_update_model)
+    def patch(self):
+        country_name = request.args.get('name')
+        if not country_name:
+            return {"error": "Query parameter 'name' required"}, 400
+
+        updates = dict(api.payload or {})
+        password = updates.pop('password', None)
+        if not updates:
+            return {"error": "No fields provided"}, 400
+
+        try:
+            updated = update_country_by_name(country_name, updates, password=password)
+        except PermissionError as exc:
+            return {"error": str(exc)}, 403
+
+        if updated:
+            target_name = updates.get('name', country_name)
+            country = read_country_by_name(target_name)
+            return {
+                "message": "Country updated",
+                "country": country
+            }, 200
+
+        return {"error": "Country not found"}, 404
 
 
 @countries_ns.route('/<string:name>')

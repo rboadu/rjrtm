@@ -8,17 +8,51 @@ from data.db_connect import convert_mongo_id
 COUNTRIES_COLL = "countries"
 
 
+def _sanitize_country(doc: dict):
+    if not doc:
+        return doc
+    doc.pop(dbc.MONGO_ID, None)
+    doc.pop("password", None)
+    return doc
+
+
 def create_country(doc: dict):
     dbc.connect_db()
+    country = dict(doc)
+    if not country.get("password"):
+        country.pop("password", None)
     existing = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
-        {"name": {"$regex": f"^{doc['name']}$", "$options": "i"}}
+        {"name": {"$regex": f"^{country['name']}$", "$options": "i"}}
     )
     if existing:
-        raise ValueError(f"Country '{doc['name']}' already exists")
-    res = dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(doc).inserted_id
-    doc.pop("_id", None)  # ← add this line
+        raise ValueError(f"Country '{country['name']}' already exists")
+    res = dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(country).inserted_id
     cache.invalidate('countries:all')
     return res
+
+
+def update_country_by_name(name: str, updates: dict, password: str = None):
+    dbc.connect_db()
+    country = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
+        {"name": {"$regex": f"^{name}$", "$options": "i"}}
+    )
+    if not country:
+        return 0
+
+    stored_password = country.get("password")
+    if stored_password and stored_password != password:
+        raise PermissionError("Invalid country password")
+
+    update_doc = dict(updates)
+    update_doc.pop("password", None)
+    update_doc.pop("_id", None)
+    result = dbc.client[dbc.SE_DB][COUNTRIES_COLL].update_one(
+        {"name": {"$regex": f"^{name}$", "$options": "i"}},
+        {"$set": update_doc},
+    )
+    if result.matched_count > 0:
+        cache.invalidate('countries:all')
+    return result.matched_count
 
 
 def delete_country_by_name(name: str):
@@ -42,9 +76,7 @@ def read_country_by_name(name: str):
     country = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
         {"name": {"$regex": f"^{name}$", "$options": "i"}}
     )
-    if country:
-        country.pop(dbc.MONGO_ID, None)
-    return country
+    return _sanitize_country(country)
 
 
 def read_all_countries():
@@ -54,7 +86,7 @@ def read_all_countries():
     dbc.connect_db()
     countries = list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find())
     for c in countries:
-        c.pop(dbc.MONGO_ID, None)
+        _sanitize_country(c)
     cache.set('countries:all', countries)
     return countries
 
@@ -65,5 +97,5 @@ def search_countries_by_name(user_input: str):
         {"name": {"$regex": user_input, "$options": "i"}}
     ))
     for c in results:
-        c.pop(dbc.MONGO_ID, None)
+        _sanitize_country(c)
     return results

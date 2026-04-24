@@ -73,6 +73,33 @@ def test_create_country_duplicate(client):
         assert "error" in response.get_json()
 
 
+def test_create_country_with_password(client):
+    payload = {"name": "Canada", "password": "secret123"}
+    with patch('server.endpoints.create_country', return_value="fake_id") as mock_create:
+        response = client.post('/countries/', json=payload)
+        assert response.status_code == 201
+        body = response.get_json()
+        assert body["country"]["name"] == "Canada"
+        assert "password" not in body["country"]
+        mock_create.assert_called_once_with(payload)
+
+
+def test_patch_country_success_with_password(client):
+    with patch('server.endpoints.update_country_by_name', return_value=1) as mock_update:
+        with patch('server.endpoints.read_country_by_name', return_value={"name": "Canada"}):
+            response = client.patch('/countries/?name=Canada', json={"name": "Canadia", "password": "secret123"})
+            assert response.status_code == 200
+            assert response.get_json()["message"] == "Country updated"
+            mock_update.assert_called_once_with('Canada', {'name': 'Canadia'}, password='secret123')
+
+
+def test_patch_country_rejects_bad_password(client):
+    with patch('server.endpoints.update_country_by_name', side_effect=PermissionError("Invalid country password")):
+        response = client.patch('/countries/?name=Canada', json={"name": "Canadia", "password": "wrong"})
+        assert response.status_code == 403
+        assert "error" in response.get_json()
+
+
 def test_delete_country_success(client):
     with patch('server.endpoints.delete_country_by_name', return_value=1):
         response = client.delete('/countries/Canada')

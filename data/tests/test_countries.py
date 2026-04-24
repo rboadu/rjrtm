@@ -49,6 +49,15 @@ class FakeCollection(list):
                 return type("FakeResult", (), {"deleted_count": 1})()
         return type("FakeResult", (), {"deleted_count": 0})()
 
+    def update_one(self, filt, update):
+        for doc in self:
+            match = all(doc.get(k) == v for k, v in filt.items() if not isinstance(v, dict))
+            if match:
+                set_vals = update.get("$set", {})
+                doc.update(set_vals)
+                return type("FakeResult", (), {"matched_count": 1})()
+        return type("FakeResult", (), {"matched_count": 0})()
+
 
 class FakeClient(dict):
     def __getitem__(self, name):
@@ -91,6 +100,36 @@ def test_duplicate_country_raises(monkeypatch):
         assert False, "Expected ValueError"
     except ValueError as e:
         assert "already exists" in str(e)
+
+
+def test_create_country_with_password(monkeypatch):
+    _setup(monkeypatch)
+
+    dc.create_country({"name": "Italy", "password": "secret"})
+    rec = dc.read_country_by_name("Italy")
+    assert rec["name"] == "Italy"
+    assert "password" not in rec
+
+
+def test_update_country_requires_password(monkeypatch):
+    _setup(monkeypatch)
+
+    dc.create_country({"name": "Portugal", "password": "secret"})
+    try:
+        dc.update_country_by_name("Portugal", {"name": "Portland"}, password="wrong")
+        assert False, "Expected PermissionError"
+    except PermissionError:
+        pass
+
+
+def test_update_country_with_password(monkeypatch):
+    _setup(monkeypatch)
+
+    dc.create_country({"name": "Portugal", "password": "secret"})
+    updated = dc.update_country_by_name("Portugal", {"name": "Portland"}, password="secret")
+    assert updated == 1
+    rec = dc.read_country_by_name("Portland")
+    assert rec["name"] == "Portland"
 
 
 def test_read_country_not_found(monkeypatch):
