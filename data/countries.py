@@ -1,6 +1,7 @@
 """
 Data access layer for the 'countries' collection in MongoDB.
 """
+import re
 import data.db_connect as dbc
 import data.cache as cache
 from data.db_connect import convert_mongo_id
@@ -22,7 +23,7 @@ def create_country(doc: dict):
     if not country.get("password"):
         country.pop("password", None)
     existing = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
-        {"name": {"$regex": f"^{country['name']}$", "$options": "i"}}
+        {"name": {"$regex": f"^{re.escape(country['name'])}$", "$options": "i"}}
     )
     if existing:
         raise ValueError(f"Country '{country['name']}' already exists")
@@ -34,7 +35,7 @@ def create_country(doc: dict):
 def update_country_by_name(name: str, updates: dict, password: str = None):
     dbc.connect_db()
     country = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
-        {"name": {"$regex": f"^{name}$", "$options": "i"}}
+        {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}
     )
     if not country:
         return 0
@@ -47,7 +48,7 @@ def update_country_by_name(name: str, updates: dict, password: str = None):
     update_doc.pop("password", None)
     update_doc.pop("_id", None)
     result = dbc.client[dbc.SE_DB][COUNTRIES_COLL].update_one(
-        {"name": {"$regex": f"^{name}$", "$options": "i"}},
+        {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}},
         {"$set": update_doc},
     )
     if result.matched_count > 0:
@@ -74,7 +75,7 @@ def delete_country_by_name(name: str):
 def read_country_by_name(name: str):
     dbc.connect_db()
     country = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
-        {"name": {"$regex": f"^{name}$", "$options": "i"}}
+        {"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}
     )
     return _sanitize_country(country)
 
@@ -94,7 +95,7 @@ def read_all_countries():
 def search_countries_by_name(user_input: str):
     dbc.connect_db()
     results = list(dbc.client[dbc.SE_DB][COUNTRIES_COLL].find(
-        {"name": {"$regex": user_input, "$options": "i"}}
+        {"name": {"$regex": re.escape(user_input), "$options": "i"}}
     ))
     for c in results:
         _sanitize_country(c)
