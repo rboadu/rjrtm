@@ -10,15 +10,11 @@ STATES_COLL = "states"
 
 def create_state(doc: dict):
     dbc.connect_db()
-    country_name = doc.get("country")
-    if not country_name:
-        raise ValueError("State must include a country name")
-    country = read_country_by_name(country_name)
-    if not country:
-        raise ValueError(f"Country '{country_name}' does not exist")
-    code = doc.get("code", "")
-    if not code.isalpha():
-        raise ValueError("State code must contain letters only (e.g. NY, CA)")
+    code = (doc or {}).get("code")
+    if code:
+        existing = dbc.client[dbc.SE_DB][STATES_COLL].find_one({"code": code})
+        if existing:
+            raise ValueError("State already exists")
     res = dbc.client[dbc.SE_DB][STATES_COLL].insert_one(doc).inserted_id
     doc.pop("_id", None)  # ← add this line
     cache.invalidate('states:all')

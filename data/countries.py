@@ -19,15 +19,12 @@ def _sanitize_country(doc: dict):
 
 def create_country(doc: dict):
     dbc.connect_db()
-    country = dict(doc)
-    if not country.get("password"):
-        country.pop("password", None)
-    existing = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one(
-        {"name": {"$regex": f"^{re.escape(country['name'])}$", "$options": "i"}}
-    )
-    if existing:
-        raise ValueError(f"Country '{country['name']}' already exists")
-    res = dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(country).inserted_id
+    code = (doc or {}).get("code")
+    if code:
+        existing = dbc.client[dbc.SE_DB][COUNTRIES_COLL].find_one({"code": code})
+        if existing:
+            raise ValueError("Country already exists")
+    res = dbc.client[dbc.SE_DB][COUNTRIES_COLL].insert_one(doc).inserted_id
     cache.invalidate('countries:all')
     return res
 

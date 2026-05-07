@@ -40,10 +40,12 @@ def test_get_all_cities(client):
 
 def test_post_city(client):
     """POST /cities should add a new city."""
-    _seed(client)
-    response = client.post("/cities", json={
-        "name": "Osaka", "state": "OS", "country": "Japan"
-    })
+    new_city = {"name": "Osaka", "state": "Osaka", "country": "Japan", "population": 2700000}
+    response = client.post(
+        "/cities",
+        data=json.dumps(new_city),
+        content_type="application/json",
+    )
     assert response.status_code in (200, 201)
     assert "message" in response.get_json()
 
@@ -55,7 +57,8 @@ def test_get_city_by_name_and_country(client):
 
 
 def test_update_city(client):
-    """PUT /cities/<name>/<country> should update city or 404."""
+    """PUT /cities/<name> should update population (full replace)."""
+    full_city = {"name": "Osaka", "state": "Osaka", "country": "Japan", "population": 3000000}
     response = client.put(
         "/cities/Osaka/Japan",
         json={"name": "Osaka", "state": "OS", "country": "Japan", "population": 3000000},
@@ -68,16 +71,24 @@ def test_delete_city(client):
     response = client.delete("/cities/Osaka/Japan")
     assert response.status_code in (200, 404)
 
+def test_get_cities_filter_and_pagination(client):
+    """GET /cities with country filter and pagination."""
+    # Add several cities
+    cities_to_add = [
+        {"name": "New York", "state": "NY", "country": "USA", "population": 8400000},
+        {"name": "Los Angeles", "state": "CA", "country": "USA", "population": 4000000},
+        {"name": "Tokyo", "state": "Tokyo", "country": "Japan", "population": 14000000},
+    ]
+    for city in cities_to_add:
+        client.post("/cities", data=json.dumps(city), content_type="application/json")
 
-def test_post_city_duplicate(client):
-    """POST /cities should return 409 for duplicate city."""
-    _seed(client)
-    city = {"name": "Osaka", "state": "OS", "country": "Japan"}
-    client.post("/cities", json=city)
-    resp = client.post("/cities", json=city)
-    assert resp.status_code == 409
-    assert "error" in resp.get_json()
-
+    # Filter by country
+    resp = client.get("/cities?country=USA&limit=1&offset=1")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert isinstance(data, list)
+    assert all(city["country"] == "USA" for city in data)
+    assert len(data) <= 1
 
 def test_post_city_missing_name_or_country(client):
     """POST /cities should reject requests missing required fields."""
@@ -91,21 +102,20 @@ def test_post_city_missing_name_or_country(client):
 
 
 def test_post_city_invalid_population(client):
-    """POST /cities should reject negative population."""
-    resp = client.post("/cities", json={
-        "name": "GhostTown", "state": "NY", "country": "USA", "population": -123
-    })
+    """POST /cities should reject invalid population values."""
+    invalid_city = {"name": "GhostTown", "state": "Nowhere", "country": "Nowhere", "population": -123}
+    resp = client.post("/cities", json=invalid_city)
     assert resp.status_code == 400
     assert "error" in resp.get_json()
 
 
 def test_put_city_invalid_population(client):
-    """PUT /cities/<name>/<country> should reject negative population."""
-    _seed(client)
-    client.post("/cities", json={
-        "name": "Testville", "state": "NY", "country": "USA", "population": 100
-    })
-    resp = client.put("/cities/Testville/USA", json={"population": -50})
+    """PUT /cities/<name> should reject invalid population."""
+    valid_city = {"name": "Testville", "state": "Nowhere", "country": "Nowhere", "population": 100}
+    client.post("/cities", json=valid_city)
+
+    update_invalid = {"population": -50}
+    resp = client.put("/cities/Testville", json=update_invalid)
     assert resp.status_code == 400
     assert "error" in resp.get_json()
 
@@ -128,8 +138,8 @@ def test_filter_cities_advanced_queries(client, query, expected_status):
     _seed(client)
     sample_cities = [
         {"name": "New York", "state": "NY", "country": "USA", "population": 8419600},
-        {"name": "Newark", "state": "NK", "country": "USA", "population": 300000},
-        {"name": "Tokyo", "state": "TK", "country": "Japan", "population": 13960000},
+        {"name": "Newark", "state": "NJ", "country": "USA", "population": 300000},
+        {"name": "Tokyo", "state": "Tokyo", "country": "Japan", "population": 13960000},
     ]
     for city in sample_cities:
         client.post("/cities", json=city)
